@@ -2,6 +2,7 @@
 data/
 photos/
 .last_sync
+config.json
 
 # macOS
 .DS_Store

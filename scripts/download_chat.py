@@ -16,16 +16,12 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-# De Anza College Child Development Center, Cupertino, CA
-LOCATION = {
-    'name': 'De Anza Child Development Center',
-    'address': '21250 Stevens Creek Blvd',
-    'city': 'Cupertino',
-    'state': 'California',
-    'country': 'United States',
-    'latitude': 37.3195,
-    'longitude': -122.0448,
-}
+# Load location from config
+SCRIPT_DIR = Path(__file__).parent.parent
+sys.path.insert(0, str(SCRIPT_DIR))
+from config import get_location
+
+LOCATION = get_location()
 
 # Time window (seconds) to look for associated text messages
 TEXT_ASSOCIATION_WINDOW = 120
@@ -232,6 +228,43 @@ def download_media(media_items, output_dir, parallel=10):
     return downloaded
 
 
+def get_location_args(file_type):
+    """Get exiftool args for location, or empty list if not configured."""
+    if not LOCATION or LOCATION is False:
+        return []
+
+    lat = LOCATION.get('latitude')
+    lon = LOCATION.get('longitude')
+
+    args = []
+
+    # Add GPS coordinates if available
+    if lat is not None and lon is not None:
+        if file_type == 'jpg':
+            lat_ref = 'N' if lat >= 0 else 'S'
+            lon_ref = 'E' if lon >= 0 else 'W'
+            args.extend([
+                f'-GPSLatitude={abs(lat)}',
+                f'-GPSLatitudeRef={lat_ref}',
+                f'-GPSLongitude={abs(lon)}',
+                f'-GPSLongitudeRef={lon_ref}',
+            ])
+        else:  # mp4
+            args.append(f'-GPSCoordinates={lat} {lon}')
+
+    # Add location name/address if available
+    if LOCATION.get('name'):
+        args.append(f'-Location={LOCATION["name"]}')
+    if LOCATION.get('city'):
+        args.append(f'-City={LOCATION["city"]}')
+    if LOCATION.get('state'):
+        args.append(f'-State={LOCATION["state"]}')
+    if LOCATION.get('country'):
+        args.append(f'-Country={LOCATION["country"]}')
+
+    return args
+
+
 def set_metadata(downloaded_files, has_exiftool):
     """Set date and location metadata on downloaded files using exiftool."""
     if not has_exiftool:
@@ -239,42 +272,17 @@ def set_metadata(downloaded_files, has_exiftool):
         print("Install with: brew install exiftool")
         return
 
-    print(f"\nSetting date and location metadata on {len(downloaded_files)} files...")
-
-    lat = LOCATION['latitude']
-    lon = LOCATION['longitude']
-    lat_ref = 'N' if lat >= 0 else 'S'
-    lon_ref = 'E' if lon >= 0 else 'W'
-
-    # Location tags for JPG (EXIF uses separate ref tags)
-    jpg_location_args = [
-        f'-GPSLatitude={abs(lat)}',
-        f'-GPSLatitudeRef={lat_ref}',
-        f'-GPSLongitude={abs(lon)}',
-        f'-GPSLongitudeRef={lon_ref}',
-        f'-Location={LOCATION["name"]}',
-        f'-City={LOCATION["city"]}',
-        f'-State={LOCATION["state"]}',
-        f'-Country={LOCATION["country"]}',
-    ]
-
-    # Location tags for MP4 (uses signed coordinates)
-    mp4_location_args = [
-        f'-GPSCoordinates={lat} {lon}',
-        f'-Location={LOCATION["name"]}',
-        f'-City={LOCATION["city"]}',
-        f'-State={LOCATION["state"]}',
-        f'-Country={LOCATION["country"]}',
-    ]
+    print(f"\nSetting metadata on {len(downloaded_files)} files...")
 
     for i, item in enumerate(downloaded_files):
         filepath, date_str, file_type, title, description = item
         filename = os.path.basename(filepath)
         print(f"[{i+1}/{len(downloaded_files)}] Setting metadata on {filename}")
 
-        # Build base args with appropriate location tags
-        loc_args = jpg_location_args if file_type == 'jpg' else mp4_location_args
-        args = ['exiftool', '-overwrite_original', '-q'] + loc_args
+        args = ['exiftool', '-overwrite_original', '-q']
+
+        # Add location args
+        args.extend(get_location_args(file_type))
 
         # Add title and description (for Apple Photos)
         if title:

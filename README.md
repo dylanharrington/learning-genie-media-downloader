@@ -61,6 +61,7 @@ If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-
 ├── sync.py               # Interactive tool - start here!
 ├── fetch.py              # Fetches JSON data from Learning Genie
 ├── download.py           # Downloads photos to dated folders
+├── config.json           # Your school's location (auto-generated)
 ├── .last_sync            # Tracks last sync time (auto-generated)
 ├── data/
 │   ├── notes.json        # Home tab data
@@ -91,13 +92,11 @@ If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-
 
 ---
 
-## Customizing Location
+## Location
 
-By default, GPS is set to De Anza Child Development Center, Cupertino, CA.
+On first run, you'll be asked to set your school's location. This embeds GPS coordinates so photos show up on the map in your photo app.
 
-To change for your school, edit the `LOCATION` dict at the top of:
-- `scripts/download_home.py`
-- `scripts/download_chat.py`
+To change later, delete `config.json` and run `./sync.py` again, or edit `config.json` directly.
 
 ---
 

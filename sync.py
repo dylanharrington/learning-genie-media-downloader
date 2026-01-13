@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+from config import load_config, prompt_for_location
 
 
 def print_header(text):
@@ -68,13 +70,25 @@ def run_download():
     return result.returncode == 0
 
 
+def check_first_run():
+    """Check if this is the first run and prompt for location if needed."""
+    config = load_config()
+
+    # If location hasn't been configured yet (None = never asked)
+    if config.get('location') is None:
+        prompt_for_location()
+
+
 def main():
     print_header("Learning Genie Photo Sync")
 
     print("This tool will help you download photos from Learning Genie.")
     print("You'll need to copy some data from Chrome DevTools.\n")
-    print("Ready? Let's go!\n")
 
+    # First run setup
+    check_first_run()
+
+    print("\nReady? Let's go!\n")
     input("Press Enter to continue...")
 
     # Step 1: Home cURL (user starts on Home tab after login)
