@@ -1,6 +1,6 @@
 # Learning Genie Media Downloader
 
-Download photos and videos from Learning Genie with proper metadata (dates, location, titles) for import into Apple Photos.
+Download photos and videos from Learning Genie with embedded metadata (dates, location, titles) for easy import into your photo library.
 
 ## Quick Start
 
@@ -17,18 +17,17 @@ brew install exiftool   # Mac (for embedding photo metadata)
 ```
 
 The script will walk you through:
-1. Getting the Chat photos cURL from Chrome DevTools
-2. Getting the Home photos cURL from Chrome DevTools
+1. Getting the Home photos cURL from Chrome DevTools
+2. Getting the Chat photos cURL from Chrome DevTools
 3. Downloading all photos to dated folders
-4. What folders to drag into Apple Photos
 
 ### That's it!
 
-Photos are saved to dated folders you can drag into Apple Photos:
+Photos are saved to dated folders you can drag into any photo app:
 ```
 photos/
 ├── home/
-│   └── 2025-01-13/    ← drag into Apple Photos
+│   └── 2025-01-13/    ← drag into Photos, Google Photos, etc.
 └── chat/
     └── 2025-01-13/
 ```

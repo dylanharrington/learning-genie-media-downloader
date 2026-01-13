@@ -138,7 +138,7 @@ def main():
     # Done!
     print_header("Done!")
     print("Your photos have been downloaded to dated folders in photos/")
-    print("Drag those folders into Apple Photos to import them.\n")
+    print("Drag those folders into your photo library (Apple Photos, Google Photos, etc.)\n")
 
 
 if __name__ == '__main__':
