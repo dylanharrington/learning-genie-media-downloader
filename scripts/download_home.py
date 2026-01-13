@@ -8,7 +8,6 @@ Usage:
 
 import json
 import os
-import re
 import subprocess
 import sys
 import urllib.request
@@ -35,7 +34,7 @@ def check_exiftool():
 
 def parse_notes(notes_path):
     """Parse notes.json and extract media items with metadata."""
-    with open(notes_path, 'r') as f:
+    with open(notes_path) as f:
         notes = json.load(f)
 
     media_items = []

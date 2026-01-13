@@ -1,0 +1,33 @@
+[project]
+name = "learning-genie-media-downloader"
+version = "1.0.0"
+requires-python = ">=3.9"
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+
+[tool.ruff.lint]
+select = [
+    "F",   # pyflakes
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter, some URLs are long)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# These files need to modify sys.path before importing local modules
+"sync.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+
+[tool.ruff.lint.isort]
+force-single-line = false
+combine-as-imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

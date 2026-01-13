@@ -17,10 +17,10 @@ import json
 import os
 import re
 import sys
-import urllib.request
 import urllib.error
 import urllib.parse
-from datetime import datetime, timezone
+import urllib.request
+from datetime import datetime
 from pathlib import Path
 
 QUICKBLOX_API = 'https://apilearninggenie.quickblox.com'
@@ -68,7 +68,7 @@ def load_last_sync():
         try:
             with open(LAST_SYNC_FILE) as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
     return {}
 
@@ -206,7 +206,7 @@ def main():
     if args.all:
         print("Fetching ALL data (ignoring last sync time)\n")
     elif last_sync:
-        print(f"Incremental fetch since last sync")
+        print("Incremental fetch since last sync")
         if 'messages' in last_sync:
             print(f"  Messages: since {datetime.fromtimestamp(last_sync['messages']).isoformat()}")
         if 'notes' in last_sync:
@@ -281,7 +281,7 @@ def main():
     # Save new sync timestamps
     if new_sync:
         save_last_sync(new_sync)
-        print(f"\nUpdated .last_sync")
+        print("\nUpdated .last_sync")
 
 
 if __name__ == '__main__':

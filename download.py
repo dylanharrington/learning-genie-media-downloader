@@ -122,7 +122,7 @@ def main():
             print(f"  {name}: Skipped (no data)")
 
     if new_folders:
-        print(f"\nDrag these folders into your photo library:")
+        print("\nDrag these folders into your photo library:")
         for folder in new_folders:
             print(f"  {folder.relative_to(SCRIPT_DIR)}/")
 

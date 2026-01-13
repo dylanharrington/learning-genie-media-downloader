@@ -117,3 +117,13 @@ Make sure `exiftool` is installed: `brew install exiftool`
 
 ### Want to re-download everything
 Use `--all` flag: `./fetch.py --all --qb-curl '...'`
+
+---
+
+## Development
+
+```bash
+python3 -m venv .venv && .venv/bin/pip install pytest
+ruff check .                 # Lint
+.venv/bin/pytest tests/ -v   # Test
+```

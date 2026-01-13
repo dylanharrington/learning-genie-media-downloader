@@ -84,7 +84,7 @@ def find_associated_text(items, current_idx, sender_id, date_sent):
 
 def parse_messages(messages_path):
     """Parse message.json and extract media items with metadata."""
-    with open(messages_path, 'r') as f:
+    with open(messages_path) as f:
         data = json.load(f)
 
     items = data.get('items', [])
@@ -100,7 +100,6 @@ def parse_messages(messages_path):
         date_sent = item.get('date_sent', 0)
         created_at = item.get('created_at', '')
         message_id = item.get('_id', '')
-        content_type = item.get('content_type', '')
         dialog_name = item.get('_dialog_name', 'Unknown')
 
         # Try to find associated text message for title

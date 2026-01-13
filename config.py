@@ -22,7 +22,7 @@ def load_config():
                 config = json.load(f)
                 # Merge with defaults for any missing keys
                 return {**DEFAULT_CONFIG, **config}
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
     return DEFAULT_CONFIG.copy()
 
