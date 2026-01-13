@@ -99,7 +99,7 @@ def download_one(args):
         return (filepath, item['date'], item['fileType'], item.get('title', ''), item.get('description', ''), str(e))
 
 
-def download_media(media_items, output_dir, parallel=10):
+def download_media(media_items, output_dir, parallel=50):
     """Download all media items to output directory."""
     os.makedirs(output_dir, exist_ok=True)
 

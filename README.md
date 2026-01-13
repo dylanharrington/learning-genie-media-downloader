@@ -23,38 +23,21 @@ brew install exiftool   # Mac (for embedding photo metadata)
 
 ### That's it!
 
-Photos are saved to folders you can drag into any photo app:
+Photos are organized and deduplicated automatically:
 ```
 photos/
-├── home/
-│   └── 2025-01-13/              ← dated folder for incremental imports
+├── new/                    ← NEW files from last sync (import these!)
+│   ├── home/
+│   └── chat/
+│       ├── Bluey_Heeler/
+│       └── Bingo_Heeler/
+├── home/                   ← All Home tab photos
 └── chat/
     ├── Bluey_Heeler/
-    │   └── 2025-01-13/          ← dated folder per kid
     └── Bingo_Heeler/
-        └── 2025-01-13/
 ```
 
----
-
-## Incremental Sync
-
-The scripts automatically track what you've already downloaded:
-
-```bash
-# First run: downloads everything
-./fetch.py --qb-curl '...' --lg-curl '...'
-./download.py
-
-# Later runs: only downloads new photos
-./fetch.py --qb-curl '...' --lg-curl '...'  # Only fetches new data
-./download.py                                 # Creates new dated folder
-
-# Force full re-download
-./fetch.py --all --qb-curl '...' --lg-curl '...'
-```
-
-If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-13_2`, etc.
+After each sync, import from `photos/new/` - it mirrors the folder structure so you can add each to separate albums.
 
 ---
 
@@ -62,19 +45,18 @@ If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-
 
 ```
 ├── sync.py               # Interactive tool - start here!
+├── login.py              # Browser automation for --auto mode
 ├── fetch.py              # Fetches JSON data from Learning Genie
 ├── download.py           # Downloads photos to dated folders
-├── config.json           # Your school's location (auto-generated)
-├── .last_sync            # Tracks last sync time (auto-generated)
+├── config.json           # Your settings (auto-generated)
 ├── data/
 │   ├── notes.json        # Home tab data
 │   └── message.json      # Chat tab data
 ├── photos/
-│   ├── home/
-│   │   └── 2025-01-13/      # Dated folders
+│   ├── new/                 # New files from last sync (mirrors structure below)
+│   ├── home/                # All Home tab photos
 │   └── chat/
-│       └── Child_Name/
-│           └── 2025-01-13/  # Dated folders per kid
+│       └── Child_Name/      # Chat photos per kid
 └── scripts/
     ├── download_home.py
     └── download_chat.py
@@ -133,7 +115,7 @@ If you get auth errors, the tokens have expired. Go back to Learning Genie, refr
 Make sure `exiftool` is installed: `brew install exiftool`
 
 ### Want to re-download everything
-Use `--all` flag: `./fetch.py --all --qb-curl '...'`
+Delete the photos folder and run sync again.
 
 ---
 

@@ -145,25 +145,37 @@ def login_and_capture_tokens(email, password, headless=True):
         # Fill email
         email_input = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first
         email_input.fill(email)
+        print("  Entered email")
+
+        # Press Enter to proceed (might trigger password field to show)
+        email_input.press('Enter')
+        page.wait_for_timeout(1000)  # Brief wait for any transitions
+
+        # Wait for password field to be visible
+        print("Waiting for password field...")
+        try:
+            page.wait_for_selector('input[type="password"]:visible', timeout=10000)
+        except Exception:
+            # If still not visible, try clicking somewhere or pressing Tab
+            email_input.press('Tab')
+            page.wait_for_selector('input[type="password"]:visible', timeout=10000)
 
         # Fill password
-        password_input = page.locator('input[type="password"]').first
+        password_input = page.locator('input[type="password"]:visible').first
         password_input.fill(password)
+        print("  Entered password")
 
-        # Submit
+        # Submit login
         print("Submitting login...")
-        submit_button = page.locator('button[type="submit"], input[type="submit"], button:has-text("Log in"), button:has-text("Sign in")').first
-        submit_button.click()
+        password_input.press('Enter')
 
-        # Wait for redirect to main app (Home tab)
+        # Wait for login to complete - either URL change or tokens captured
         print("Waiting for login to complete...")
-        try:
-            page.wait_for_url('**/home**', timeout=30000)
-        except Exception:
-            # Try alternative URL patterns
-            page.wait_for_selector('[class*="home"], [class*="dashboard"], [data-tab="home"]', timeout=30000)
+        page.wait_for_timeout(3000)  # Give time for redirects and API calls
 
-        print("✓ Logged in successfully")
+        # Check if we got tokens as a sign of success
+        if tokens['x_uid'] or tokens['qb_token']:
+            print("✓ Logged in successfully (tokens captured)")
 
         # Get lg_session from cookies
         cookies = context.cookies()
@@ -173,20 +185,17 @@ def login_and_capture_tokens(email, password, headless=True):
                 print("  ✓ Captured lg_session")
                 break
 
-        # Navigate to Chat to capture QB token
-        print("\nNavigating to Chat tab...")
-
-        # Look for Chat link/button
-        chat_link = page.locator('a:has-text("Chat"), button:has-text("Chat"), [href*="chat"]').first
-        chat_link.click()
-
-        # Chat might open in new tab - handle both cases
-        page.wait_for_timeout(3000)  # Give time for requests to fire
-
-        # If QB token not captured yet, try to trigger a request
+        # Navigate to Chat to capture QB token (if not already captured)
         if not tokens['qb_token']:
-            print("  Waiting for Chat API requests...")
-            page.wait_for_timeout(5000)
+            print("\nNavigating to Chat tab...")
+            try:
+                chat_link = page.locator('a:has-text("Chat"), button:has-text("Chat"), [href*="chat"]').first
+                chat_link.click()
+                page.wait_for_timeout(5000)  # Give time for requests to fire
+            except Exception as e:
+                print(f"  Could not navigate to Chat: {e}")
+        else:
+            print("\n✓ Already captured QB-Token from login")
 
         browser.close()
 
@@ -199,17 +208,15 @@ def run_fetch(tokens):
     print("Running fetch with captured tokens...")
     print("="*60 + "\n")
 
-    # Build fake cURL commands that fetch.py can parse
-    lg_curl = f"curl 'https://api2.learning-genie.com/api/v1/Notes' -H 'x-uid: {tokens['x_uid']}' -H 'Cookie: lg_session={tokens['lg_session']}'"
-    qb_curl = f"curl 'https://apilearninggenie.quickblox.com/chat/Dialog.json' -H 'QB-Token: {tokens['qb_token']}'"
-
     cmd = [sys.executable, str(SCRIPT_DIR / 'fetch.py')]
 
+    # Pass tokens directly (no fake cURL needed)
     if tokens['lg_session'] and tokens['x_uid']:
-        cmd.extend(['--lg-curl', lg_curl])
+        cmd.extend(['--lg-session', tokens['lg_session']])
+        cmd.extend(['--x-uid', tokens['x_uid']])
 
     if tokens['qb_token']:
-        cmd.extend(['--qb-curl', qb_curl])
+        cmd.extend(['--qb-token', tokens['qb_token']])
 
     result = subprocess.run(cmd, cwd=SCRIPT_DIR)
     return result.returncode == 0

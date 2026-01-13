@@ -16,7 +16,6 @@ A Python tool to download photos and videos from Learning Genie (daycare/school 
 
 ./fetch.py --lg-curl '...'   # Fetch Home tab data (manual)
 ./fetch.py --qb-curl '...'   # Fetch Chat tab data (manual)
-./fetch.py --all --lg-curl '...'  # Force full re-fetch
 ./download.py                # Download photos from fetched data
 
 # Linting and testing (requires .venv)
@@ -37,8 +36,9 @@ ruff check .                 # Lint
 4. `scripts/download_home.py` and `scripts/download_chat.py` do parallel downloads and set EXIF metadata via exiftool
 
 **Key patterns:**
-- Incremental sync tracked via `.last_sync` JSON (timestamps for each source)
-- Photos organized into dated folders (`photos/home/2025-01-13/`, `photos/chat/Kid_Name/2025-01-13/`)
+- Photos stored flat (`photos/home/`, `photos/chat/Kid_Name/`)
+- Downloads skip existing files (deduplication by filename)
+- New files copied to `photos/new/` (cleared each run, mirrors folder structure) for easy import
 - Config stored in `config.json`: location, email, 1Password path
 - Password resolution: 1Password CLI (`op read`) → `LG_PASSWORD` env var → interactive prompt
-- Both download scripts share similar structure: parse JSON, generate unique filenames with date counts, parallel download with ThreadPoolExecutor, set EXIF metadata
+- Both download scripts share similar structure: parse JSON, generate unique filenames with date counts, parallel download with ThreadPoolExecutor (50 workers), set EXIF metadata
