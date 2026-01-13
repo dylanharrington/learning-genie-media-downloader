@@ -109,9 +109,6 @@ To change later, delete `config.json` and run `./sync.py` again, or edit `config
 ### Token expired
 If you get auth errors, the tokens have expired. Go back to Learning Genie, refresh, and copy fresh cURL commands.
 
-### Multiple children
-The script uses the first child found. Check the output for other enrollment IDs if you have multiple children.
-
 ### Photos not showing correct date
 Make sure `exiftool` is installed: `brew install exiftool`
 

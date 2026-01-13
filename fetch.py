@@ -131,8 +131,8 @@ def fetch_messages(qb_token, since_timestamp=None):
     return {'items': all_messages, 'skip': 0, 'limit': len(all_messages)}, latest_timestamp
 
 
-def fetch_notes(lg_session, x_uid, enrollment_id=None, since_time=None):
-    """Fetch notes using Learning Genie session."""
+def fetch_notes(lg_session, x_uid, since_time=None):
+    """Fetch notes for all enrolled children using Learning Genie session."""
     headers = {
         'Accept': 'application/json',
         'x-lg-platform': 'web',
@@ -140,48 +140,50 @@ def fetch_notes(lg_session, x_uid, enrollment_id=None, since_time=None):
         'Cookie': f'lg_session={lg_session}',
     }
 
-    if not enrollment_id:
-        print("Fetching user profile to find enrollment ID...")
-        profile = fetch_json(f"{LG_API}/api/v1/Users/me", headers)
-        if profile and 'familyEnrollments' in profile:
-            enrollments = profile['familyEnrollments']
-            if enrollments:
-                enrollment_id = enrollments[0].get('id') or enrollments[0].get('_id')
-                child_name = f"{enrollments[0].get('childFirstName', '')} {enrollments[0].get('childLastName', '')}"
-                print(f"Found enrollment: {child_name} (ID: {enrollment_id})")
-
-                if len(enrollments) > 1:
-                    print("Multiple children found:")
-                    for i, e in enumerate(enrollments):
-                        eid = e.get('id') or e.get('_id')
-                        name = f"{e.get('childFirstName', '')} {e.get('childLastName', '')}"
-                        print(f"  {i+1}. {name} (ID: {eid})")
-                    print("Using first child. Edit enrollment_id in script for others.")
-
-    if not enrollment_id:
-        print("Could not find enrollment ID")
+    print("Fetching user profile to find enrollments...")
+    profile = fetch_json(f"{LG_API}/api/v1/Users/me", headers)
+    if not profile or 'familyEnrollments' not in profile:
+        print("Could not fetch profile")
         return None, None
 
-    print("Fetching notes...")
-    notes_url = f"{LG_API}/api/v1/Notes?before_time=2035-01-01%2000:00:00.000&count=10000&enrollment_id={enrollment_id}&note_category=report&video_book=true"
+    enrollments = profile['familyEnrollments']
+    if not enrollments:
+        print("No enrollments found")
+        return None, None
 
-    # Add after_time filter if we have a since_time
-    if since_time:
-        notes_url += f"&after_time={urllib.parse.quote(since_time)}"
+    print(f"Found {len(enrollments)} enrolled child(ren):")
+    for e in enrollments:
+        name = f"{e.get('childFirstName', '')} {e.get('childLastName', '')}"
+        print(f"  - {name}")
 
-    notes = fetch_json(notes_url, headers)
-
+    all_notes = []
     latest_time = None
-    if notes:
-        print(f"Fetched {len(notes)} notes")
-        # Find the latest note timestamp
-        for note in notes:
-            for media in note.get('media', []):
-                created = media.get('createAtUtc', '')
-                if created and (latest_time is None or created > latest_time):
-                    latest_time = created
 
-    return notes, latest_time
+    for enrollment in enrollments:
+        enrollment_id = enrollment.get('id') or enrollment.get('_id')
+        child_name = f"{enrollment.get('childFirstName', '')} {enrollment.get('childLastName', '')}"
+
+        print(f"Fetching notes for {child_name}...")
+        notes_url = f"{LG_API}/api/v1/Notes?before_time=2035-01-01%2000:00:00.000&count=10000&enrollment_id={enrollment_id}&note_category=report&video_book=true"
+
+        if since_time:
+            notes_url += f"&after_time={urllib.parse.quote(since_time)}"
+
+        notes = fetch_json(notes_url, headers)
+
+        if notes:
+            print(f"  Got {len(notes)} notes")
+            all_notes.extend(notes)
+
+            # Track latest timestamp
+            for note in notes:
+                for media in note.get('media', []):
+                    created = media.get('createAtUtc', '')
+                    if created and (latest_time is None or created > latest_time):
+                        latest_time = created
+
+    print(f"Total notes: {len(all_notes)}")
+    return all_notes, latest_time
 
 
 def main():
@@ -250,12 +252,6 @@ def main():
 
         x_uid = headers.get('x-uid')
 
-        enrollment_id = None
-        if url:
-            enroll_match = re.search(r'enrollment_id=([^&]+)', url)
-            if enroll_match:
-                enrollment_id = enroll_match.group(1)
-
         if not lg_session:
             print("Error: Could not find lg_session cookie in cURL command")
             sys.exit(1)
@@ -267,7 +263,7 @@ def main():
         print(f"Found x-uid: {x_uid}")
 
         since_time = last_sync.get('notes') if not args.all else None
-        notes, latest_time = fetch_notes(lg_session, x_uid, enrollment_id, since_time)
+        notes, latest_time = fetch_notes(lg_session, x_uid, since_time)
 
         if notes and len(notes) > 0:
             with open(args.notes_out, 'w') as f:
