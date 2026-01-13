@@ -55,6 +55,17 @@ def set_location(name, address, city, state, country, latitude, longitude):
     return config['location']
 
 
+DE_ANZA_LOCATION = {
+    'name': 'De Anza Child Development Center',
+    'address': '21250 Stevens Creek Blvd',
+    'city': 'Cupertino',
+    'state': 'California',
+    'country': 'United States',
+    'latitude': 37.3195,
+    'longitude': -122.0448,
+}
+
+
 def prompt_for_location():
     """Interactive prompt to configure location."""
     print("\n" + "="*60)
@@ -63,22 +74,39 @@ def prompt_for_location():
     print("""
 Photos can be tagged with your school's GPS location so they
 show up on the map in your photo app.
+
+Which school?
+  [1] De Anza Child Development Center (Cupertino, CA)
+  [2] Other school (enter your own)
+  [3] Skip - don't add location to photos
 """)
 
-    response = input("Do you want to set your school's location? [Y/n] ").strip().lower()
+    choice = input("Enter 1, 2, or 3: ").strip()
 
-    if response in ('n', 'no'):
+    if choice == '1':
+        # De Anza preset
+        config = load_config()
+        config['location'] = DE_ANZA_LOCATION
+        save_config(config)
+        print(f"\n✓ Location set: {DE_ANZA_LOCATION['name']}")
+        return DE_ANZA_LOCATION
+
+    if choice == '3' or choice.lower() in ('skip', 's', 'n', 'no', ''):
         print("\nSkipping location. Photos won't have GPS coordinates.")
         config = load_config()
         config['location'] = False  # Explicitly disabled
         save_config(config)
         return None
 
+    # Custom location
     print("\nEnter your school's information:\n")
 
     name = input("School name: ").strip()
     if not name:
         print("No name entered. Skipping location setup.")
+        config = load_config()
+        config['location'] = False
+        save_config(config)
         return None
 
     address = input("Street address: ").strip()
