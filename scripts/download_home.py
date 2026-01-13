@@ -100,11 +100,11 @@ def download_one(args):
 
 
 def download_media(media_items, output_dir, parallel=50):
-    """Download all media items to output directory."""
+    """Download all media items to output directory. Returns only newly downloaded files."""
     os.makedirs(output_dir, exist_ok=True)
 
     date_counts = defaultdict(int)
-    downloaded = []
+    already_exist = 0
     to_download = []
 
     # First pass: generate filenames and check what needs downloading
@@ -113,16 +113,17 @@ def download_media(media_items, output_dir, parallel=50):
         filepath = os.path.join(output_dir, filename)
 
         if os.path.exists(filepath):
-            downloaded.append((filepath, item['date'], item['fileType'], item.get('title', ''), item.get('description', '')))
+            already_exist += 1
         else:
             to_download.append((item, filepath, filename))
 
-    print(f"Found {len(media_items)} media files, {len(downloaded)} already exist, downloading {len(to_download)}...")
+    print(f"Found {len(media_items)} media files, {already_exist} already exist, downloading {len(to_download)}...")
 
     if not to_download:
-        return downloaded
+        return []
 
     # Download in parallel
+    newly_downloaded = []
     with ThreadPoolExecutor(max_workers=parallel) as executor:
         futures = {executor.submit(download_one, (item, filepath)): filename
                    for item, filepath, filename in to_download}
@@ -136,9 +137,9 @@ def download_media(media_items, output_dir, parallel=50):
                 print(f"[{i+1}/{len(to_download)}] ERROR {filename}: {error}")
             else:
                 print(f"[{i+1}/{len(to_download)}] Downloaded: {filename}")
-                downloaded.append((filepath, date, ftype, title, desc))
+                newly_downloaded.append((filepath, date, ftype, title, desc))
 
-    return downloaded
+    return newly_downloaded
 
 
 def get_location_args(file_type):
