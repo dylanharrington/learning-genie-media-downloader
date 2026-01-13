@@ -77,35 +77,17 @@ def main():
 
     input("Press Enter to continue...")
 
-    # Step 1: Chat cURL
-    print_step(1, "Get Chat photos data")
+    # Step 1: Home cURL (user starts on Home tab after login)
+    print_step(1, "Get Home photos data")
     print("""
 1. Open Chrome and go to: https://web.learning-genie.com
-2. Log in if needed
-3. Click on the "Chat" tab
-4. Open DevTools: Cmd+Option+I (Mac) or Ctrl+Shift+I (Windows)
-5. Click the "Network" tab
-6. Click "Fetch/XHR" filter (or just "XHR")
-7. Click on any chat conversation to trigger requests
-8. Look for a request to "quickblox.com" (like Dialog.json or Message.json)
-9. Right-click that request → "Copy as cURL"
-""")
-
-    qb_curl = get_multiline_input("Paste the cURL command here:")
-
-    if not qb_curl or 'curl' not in qb_curl.lower():
-        print("\nNo valid cURL detected. Skipping Chat photos.")
-        qb_curl = None
-    else:
-        print("\n✓ Got Chat cURL")
-
-    # Step 2: Home cURL
-    print_step(2, "Get Home photos data")
-    print("""
-1. In Learning Genie, click on the "Home" tab
-2. In DevTools Network tab, look for new requests
-3. Find a request to "api2.learning-genie.com" (like Notes)
-4. Right-click that request → "Copy as cURL"
+2. Log in if needed (you'll land on the Home tab)
+3. Open DevTools: right-click anywhere → "Inspect", then click "Network" tab
+   (or use View menu → Developer → Developer Tools)
+4. Click "Fetch/XHR" filter
+5. Refresh the page to trigger requests
+6. Look for a request to "api2.learning-genie.com" (like "Notes")
+7. Right-click that request → "Copy as cURL"
 """)
 
     lg_curl = get_multiline_input("Paste the cURL command here:")
@@ -115,6 +97,25 @@ def main():
         lg_curl = None
     else:
         print("\n✓ Got Home cURL")
+
+    # Step 2: Chat cURL (opens in new tab, so DevTools needs to be reopened)
+    print_step(2, "Get Chat photos data")
+    print("""
+1. Click the "Chat" tab (this opens in a new browser tab)
+2. Open DevTools again: right-click → "Inspect" → "Network" tab
+3. Click "Fetch/XHR" filter
+4. Click on any chat conversation to trigger requests
+5. Look for a request to "quickblox.com" (like Dialog.json)
+6. Right-click that request → "Copy as cURL"
+""")
+
+    qb_curl = get_multiline_input("Paste the cURL command here:")
+
+    if not qb_curl or 'curl' not in qb_curl.lower():
+        print("\nNo valid cURL detected. Skipping Chat photos.")
+        qb_curl = None
+    else:
+        print("\n✓ Got Chat cURL")
 
     if not qb_curl and not lg_curl:
         print("\nNo data to fetch. Exiting.")
