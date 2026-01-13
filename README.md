@@ -1,0 +1,117 @@
+# Learning Genie Media Downloader
+
+Download photos and videos from Learning Genie with proper metadata (dates, location, titles) for import into Apple Photos.
+
+## Quick Start
+
+### 1. Install requirements
+
+```bash
+brew install exiftool   # Mac (for embedding photo metadata)
+```
+
+### 2. Run the sync tool
+
+```bash
+./sync.py
+```
+
+The script will walk you through:
+1. Getting the Chat photos cURL from Chrome DevTools
+2. Getting the Home photos cURL from Chrome DevTools
+3. Downloading all photos to dated folders
+4. What folders to drag into Apple Photos
+
+### That's it!
+
+Photos are saved to dated folders you can drag into Apple Photos:
+```
+photos/
+├── home/
+│   └── 2025-01-13/    ← drag into Apple Photos
+└── chat/
+    └── 2025-01-13/
+```
+
+---
+
+## Incremental Sync
+
+The scripts automatically track what you've already downloaded:
+
+```bash
+# First run: downloads everything
+./fetch.py --qb-curl '...' --lg-curl '...'
+./download.py
+
+# Later runs: only downloads new photos
+./fetch.py --qb-curl '...' --lg-curl '...'  # Only fetches new data
+./download.py                                 # Creates new dated folder
+
+# Force full re-download
+./fetch.py --all --qb-curl '...' --lg-curl '...'
+```
+
+If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-13_2`, etc.
+
+---
+
+## Project Structure
+
+```
+├── sync.py               # Interactive tool - start here!
+├── fetch.py              # Fetches JSON data from Learning Genie
+├── download.py           # Downloads photos to dated folders
+├── .last_sync            # Tracks last sync time (auto-generated)
+├── data/
+│   ├── notes.json        # Home tab data
+│   └── message.json      # Chat tab data
+├── photos/
+│   ├── home/
+│   │   └── 2025-01-13/   # Dated folders
+│   └── chat/
+│       └── 2025-01-13/
+└── scripts/
+    ├── download_home.py
+    └── download_chat.py
+```
+
+---
+
+## What Gets Downloaded
+
+| Source | Tab | Output |
+|--------|-----|--------|
+| `data/notes.json` | Home | `photos/home/<date>/` |
+| `data/message.json` | Chat | `photos/chat/<date>/` |
+
+**Embedded metadata:**
+- Date/time (photos appear on correct date in timeline)
+- GPS location (shows on map)
+- Titles and descriptions (searchable)
+
+---
+
+## Customizing Location
+
+By default, GPS is set to De Anza Child Development Center, Cupertino, CA.
+
+To change for your school, edit the `LOCATION` dict at the top of:
+- `scripts/download_home.py`
+- `scripts/download_chat.py`
+
+---
+
+## Troubleshooting
+
+### Token expired
+If you get auth errors, the tokens have expired. Go back to Learning Genie, refresh, and copy fresh cURL commands.
+
+### Multiple children
+The script uses the first child found. Check the output for other enrollment IDs if you have multiple children.
+
+### Photos not showing correct date
+Make sure `exiftool` is installed: `brew install exiftool`
+
+### Want to re-download everything
+Use `--all` flag: `./fetch.py --all --qb-curl '...'`
