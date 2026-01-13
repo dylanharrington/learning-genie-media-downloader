@@ -101,6 +101,7 @@ def parse_messages(messages_path):
         created_at = item.get('created_at', '')
         message_id = item.get('_id', '')
         content_type = item.get('content_type', '')
+        dialog_name = item.get('_dialog_name', 'Unknown')
 
         # Try to find associated text message for title
         associated_text = find_associated_text(items, idx, sender_id, date_sent)
@@ -146,6 +147,7 @@ def parse_messages(messages_path):
                 'sender': sender_name,
                 'title': title,
                 'description': description,
+                'dialog_name': dialog_name,
             })
 
     # Sort by date (oldest first)
@@ -320,6 +322,15 @@ def set_metadata(downloaded_files, has_exiftool):
         subprocess.run(args, capture_output=True)
 
 
+def sanitize_folder_name(name):
+    """Convert a name to a safe folder name."""
+    # Replace spaces and special chars with underscores
+    safe = re.sub(r'[^\w\-]', '_', name)
+    # Remove consecutive underscores
+    safe = re.sub(r'_+', '_', safe)
+    return safe.strip('_')
+
+
 def main():
     script_dir = Path(__file__).parent
     messages_path = sys.argv[1] if len(sys.argv) > 1 else str(script_dir / 'message.json')
@@ -334,7 +345,7 @@ def main():
         print("Warning: exiftool not found. Dates and location will not be embedded in files.")
         print("Install with: brew install exiftool\n")
 
-    # Parse and download
+    # Parse messages
     media_items = parse_messages(messages_path)
     print(f"Found {len(media_items)} media items in {messages_path}")
 
@@ -342,15 +353,29 @@ def main():
         print("No media found.")
         sys.exit(0)
 
-    downloaded = download_media(media_items, output_dir)
+    # Group by dialog (kid)
+    by_dialog = defaultdict(list)
+    for item in media_items:
+        dialog = item.get('dialog_name', 'Unknown')
+        by_dialog[dialog].append(item)
+
+    # Download each dialog's media to its own subfolder
+    all_downloaded = []
+    for dialog_name, items in by_dialog.items():
+        folder_name = sanitize_folder_name(dialog_name)
+        dialog_output_dir = os.path.join(output_dir, folder_name)
+
+        print(f"\n--- {dialog_name} ({len(items)} items) ---")
+        downloaded = download_media(items, dialog_output_dir)
+        all_downloaded.extend(downloaded)
 
     # Set metadata (dates and location)
-    set_metadata(downloaded, has_exiftool)
+    set_metadata(all_downloaded, has_exiftool)
 
     # Summary
-    jpg_count = sum(1 for item in downloaded if item[2] == 'jpg')
-    mp4_count = sum(1 for item in downloaded if item[2] == 'mp4')
-    print(f"\nDone! {len(downloaded)} files ({jpg_count} photos, {mp4_count} videos)")
+    jpg_count = sum(1 for item in all_downloaded if item[2] == 'jpg')
+    mp4_count = sum(1 for item in all_downloaded if item[2] == 'mp4')
+    print(f"\nDone! {len(all_downloaded)} files ({jpg_count} photos, {mp4_count} videos)")
 
 
 if __name__ == '__main__':

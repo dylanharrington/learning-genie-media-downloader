@@ -23,13 +23,14 @@ The script will walk you through:
 
 ### That's it!
 
-Photos are saved to dated folders you can drag into any photo app:
+Photos are saved to folders you can drag into any photo app:
 ```
 photos/
 ├── home/
-│   └── 2025-01-13/    ← drag into Photos, Google Photos, etc.
+│   └── 2025-01-13/         ← dated folder for incremental imports
 └── chat/
-    └── 2025-01-13/
+    ├── Bluey_Heeler/    ← one folder per kid
+    └── Bingo_Heeler/
 ```
 
 ---
@@ -68,9 +69,9 @@ If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-
 │   └── message.json      # Chat tab data
 ├── photos/
 │   ├── home/
-│   │   └── 2025-01-13/   # Dated folders
+│   │   └── 2025-01-13/      # Dated folders
 │   └── chat/
-│       └── 2025-01-13/
+│       └── Child_Name/      # Per-kid folders
 └── scripts/
     ├── download_home.py
     └── download_chat.py

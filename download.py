@@ -36,8 +36,8 @@ def get_dated_folder(base_path):
         suffix += 1
 
 
-def run_script(script, json_file, base_output_dir):
-    """Run a download script with timestamped output folder."""
+def run_script(script, json_file, base_output_dir, use_dated_folder=True):
+    """Run a download script."""
     script_path = SCRIPT_DIR / 'scripts' / script
     json_path = SCRIPT_DIR / json_file
     base_path = SCRIPT_DIR / base_output_dir
@@ -46,8 +46,11 @@ def run_script(script, json_file, base_output_dir):
         print(f"Skipping {script}: {json_file} not found")
         return None, False
 
-    # Create timestamped output folder
-    output_path = get_dated_folder(base_path)
+    # Create output folder (dated for home, flat for chat which has kid subfolders)
+    if use_dated_folder:
+        output_path = get_dated_folder(base_path)
+    else:
+        output_path = base_path
     output_path.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'='*60}")
@@ -60,10 +63,15 @@ def run_script(script, json_file, base_output_dir):
         cwd=SCRIPT_DIR
     )
 
-    # Check if any files were downloaded
-    files = list(output_path.glob('*'))
-    if not files:
-        output_path.rmdir()  # Remove empty folder
+    # Check if any files were downloaded (check recursively for subfolders)
+    files = list(output_path.rglob('*.jpg')) + list(output_path.rglob('*.mp4'))
+
+    # For dated folders, remove if empty
+    if use_dated_folder and not files:
+        try:
+            output_path.rmdir()
+        except OSError:
+            pass  # Not empty or other error
         return None, True  # Success but no new files
 
     return output_path, result.returncode == 0
@@ -89,17 +97,21 @@ def main():
             new_folders.append(folder)
 
     if not args.home_only:
-        folder, success = run_script('download_chat.py', 'data/message.json', 'photos/chat')
+        # Chat uses kid subfolders, not dated folders
+        folder, success = run_script('download_chat.py', 'data/message.json', 'photos/chat', use_dated_folder=False)
         results.append(('Chat', success, folder))
         if folder:
-            new_folders.append(folder)
+            # List kid subfolders instead of the parent
+            kid_folders = [f for f in folder.iterdir() if f.is_dir()]
+            new_folders.extend(kid_folders if kid_folders else [folder])
 
     print(f"\n{'='*60}")
     print("Summary")
     print('='*60)
     for name, success, folder in results:
         if folder:
-            file_count = len(list(folder.glob('*')))
+            # Count files recursively for folders with subfolders
+            file_count = len(list(folder.rglob('*.jpg'))) + len(list(folder.rglob('*.mp4')))
             print(f"  {name}: {file_count} files → {folder.relative_to(SCRIPT_DIR)}/")
         elif success:
             print(f"  {name}: No new files")
@@ -107,7 +119,7 @@ def main():
             print(f"  {name}: Skipped (no data)")
 
     if new_folders:
-        print(f"\nDrag these folders into Apple Photos:")
+        print(f"\nDrag these folders into your photo library:")
         for folder in new_folders:
             print(f"  {folder.relative_to(SCRIPT_DIR)}/")
 

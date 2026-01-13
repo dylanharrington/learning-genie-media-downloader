@@ -116,6 +116,9 @@ def fetch_messages(qb_token, since_timestamp=None):
 
         if messages and 'items' in messages:
             print(f"    Got {len(messages['items'])} messages")
+            # Add dialog name to each message for organizing by kid
+            for msg in messages['items']:
+                msg['_dialog_name'] = dialog_name
             all_messages.extend(messages['items'])
 
             # Track latest timestamp
