@@ -181,7 +181,7 @@ class TestConfig:
         monkeypatch.setattr(config, "CONFIG_FILE", tmp_path / "nonexistent.json")
 
         result = config.load_config()
-        assert result == {"location": None}
+        assert result == {"location": None, "email": None, "op_path": None}
 
     def test_save_and_load_config(self, tmp_path, monkeypatch):
         import config

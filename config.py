@@ -10,7 +10,9 @@ SCRIPT_DIR = Path(__file__).parent
 CONFIG_FILE = SCRIPT_DIR / 'config.json'
 
 DEFAULT_CONFIG = {
-    'location': None  # Will be set on first run
+    'location': None,  # Will be set on first run
+    'email': None,     # Learning Genie login email
+    'op_path': None,   # 1Password path for password (e.g., "op://Private/Learning Genie/password")
 }
 
 
@@ -37,6 +39,34 @@ def get_location():
     """Get configured location, or None if not set."""
     config = load_config()
     return config.get('location')
+
+
+def get_email():
+    """Get configured email, or None if not set."""
+    config = load_config()
+    return config.get('email')
+
+
+def set_email(email):
+    """Set the login email."""
+    config = load_config()
+    config['email'] = email
+    save_config(config)
+    return email
+
+
+def get_op_path():
+    """Get 1Password path for password, or None if not set."""
+    config = load_config()
+    return config.get('op_path')
+
+
+def set_op_path(op_path):
+    """Set the 1Password path for password retrieval."""
+    config = load_config()
+    config['op_path'] = op_path
+    save_config(config)
+    return op_path
 
 
 def set_location(name, address, city, state, country, latitude, longitude):

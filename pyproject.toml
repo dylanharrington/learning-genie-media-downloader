@@ -22,6 +22,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # These files need to modify sys.path before importing local modules
 "sync.py" = ["E402"]
+"login.py" = ["E402"]
 "scripts/*.py" = ["E402"]
 
 [tool.ruff.lint.isort]

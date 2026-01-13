@@ -2,8 +2,13 @@
 """
 Interactive sync tool for Learning Genie photos.
 Walks you through the entire process step by step.
+
+Usage:
+    ./sync.py         # Manual mode (copy cURL commands)
+    ./sync.py --auto  # Automatic mode (browser automation)
 """
 
+import argparse
 import subprocess
 import sys
 from pathlib import Path
@@ -79,16 +84,40 @@ def check_first_run():
         prompt_for_location()
 
 
-def main():
-    print_header("Learning Genie Photo Sync")
+def run_auto_login():
+    """Run login.py for automatic browser-based authentication."""
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT_DIR / 'login.py')],
+        cwd=SCRIPT_DIR
+    )
+    return result.returncode == 0
 
-    print("This tool will help you download photos from Learning Genie.")
-    print("You'll need to copy some data from Chrome DevTools.\n")
+
+def main():
+    parser = argparse.ArgumentParser(description='Sync photos from Learning Genie')
+    parser.add_argument('--auto', action='store_true', help='Use browser automation instead of manual cURL')
+    args = parser.parse_args()
+
+    print_header("Learning Genie Photo Sync")
 
     # First run setup
     check_first_run()
 
-    print("\nReady? Let's go!\n")
+    # Auto mode: use browser automation
+    if args.auto:
+        print("Using automatic browser login...\n")
+        success = run_auto_login()
+        if not success:
+            print("\nAuto-login failed.")
+            sys.exit(1)
+        return
+
+    # Manual mode: guide through cURL copying
+    print("This tool will help you download photos from Learning Genie.")
+    print("You'll need to copy some data from Chrome DevTools.")
+    print("\nTip: Use './sync.py --auto' for automatic browser login.\n")
+
+    print("Ready? Let's go!\n")
     input("Press Enter to continue...")
 
     # Step 1: Home cURL (user starts on Home tab after login)

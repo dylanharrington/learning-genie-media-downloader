@@ -13,13 +13,13 @@ brew install exiftool   # Mac (for embedding photo metadata)
 ### 2. Run the sync tool
 
 ```bash
-./sync.py
+./sync.py --auto   # Automatic login (recommended)
+./sync.py          # Manual mode (copy cURL commands)
 ```
 
-The script will walk you through:
-1. Getting the Home photos cURL from Chrome DevTools
-2. Getting the Chat photos cURL from Chrome DevTools
-3. Downloading all photos to dated folders
+**Automatic mode** logs in via browser automation - just enter your email and password.
+
+**Manual mode** walks you through copying cURL commands from Chrome DevTools.
 
 ### That's it!
 
@@ -104,9 +104,29 @@ To change later, delete `config.json` and run `./sync.py` again, or edit `config
 
 ---
 
+## Automatic Login
+
+The `--auto` flag uses browser automation to log in automatically. Your email is saved to `config.json` after the first run.
+
+**Password options** (checked in order):
+1. **1Password CLI**: Set up with `op://vault/Learning Genie/password` path
+2. **Environment variable**: `export LG_PASSWORD=yourpassword`
+3. **Prompt**: Asked each time if neither above is configured
+
+```bash
+# First-time setup
+.venv/bin/pip install playwright
+.venv/bin/playwright install chromium
+
+# Run with auto-login
+./sync.py --auto
+```
+
+---
+
 ## Troubleshooting
 
-### Token expired
+### Token expired (manual mode)
 If you get auth errors, the tokens have expired. Go back to Learning Genie, refresh, and copy fresh cURL commands.
 
 ### Photos not showing correct date
