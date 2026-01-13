@@ -331,6 +331,24 @@ def sanitize_folder_name(name):
     return safe.strip('_')
 
 
+def get_dated_folder(base_path):
+    """Get a dated folder path, adding suffix if folder already exists."""
+    from datetime import date
+    today = date.today().isoformat()  # e.g., "2025-01-13"
+    folder = os.path.join(base_path, today)
+
+    if not os.path.exists(folder):
+        return folder
+
+    # Folder exists, find next available suffix
+    suffix = 2
+    while True:
+        folder = os.path.join(base_path, f"{today}_{suffix}")
+        if not os.path.exists(folder):
+            return folder
+        suffix += 1
+
+
 def main():
     script_dir = Path(__file__).parent
     messages_path = sys.argv[1] if len(sys.argv) > 1 else str(script_dir / 'message.json')
@@ -359,14 +377,23 @@ def main():
         dialog = item.get('dialog_name', 'Unknown')
         by_dialog[dialog].append(item)
 
-    # Download each dialog's media to its own subfolder
+    # Download each dialog's media to its own dated subfolder
     all_downloaded = []
     for dialog_name, items in by_dialog.items():
-        folder_name = sanitize_folder_name(dialog_name)
-        dialog_output_dir = os.path.join(output_dir, folder_name)
+        kid_folder = sanitize_folder_name(dialog_name)
+        kid_base = os.path.join(output_dir, kid_folder)
+        dated_folder = get_dated_folder(kid_base)
 
         print(f"\n--- {dialog_name} ({len(items)} items) ---")
-        downloaded = download_media(items, dialog_output_dir)
+        downloaded = download_media(items, dated_folder)
+
+        # Remove empty dated folder if nothing downloaded
+        if not downloaded and os.path.exists(dated_folder):
+            try:
+                os.rmdir(dated_folder)
+            except OSError:
+                pass
+
         all_downloaded.extend(downloaded)
 
     # Set metadata (dates and location)

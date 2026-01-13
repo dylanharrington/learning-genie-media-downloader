@@ -27,10 +27,12 @@ Photos are saved to folders you can drag into any photo app:
 ```
 photos/
 ├── home/
-│   └── 2025-01-13/         ← dated folder for incremental imports
+│   └── 2025-01-13/              ← dated folder for incremental imports
 └── chat/
-    ├── Bluey_Heeler/    ← one folder per kid
+    ├── Bluey_Heeler/
+    │   └── 2025-01-13/          ← dated folder per kid
     └── Bingo_Heeler/
+        └── 2025-01-13/
 ```
 
 ---
@@ -71,7 +73,8 @@ If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-
 │   ├── home/
 │   │   └── 2025-01-13/      # Dated folders
 │   └── chat/
-│       └── Child_Name/      # Per-kid folders
+│       └── Child_Name/
+│           └── 2025-01-13/  # Dated folders per kid
 └── scripts/
     ├── download_home.py
     └── download_chat.py
@@ -84,7 +87,7 @@ If you run multiple times per day, folders are numbered: `2025-01-13`, `2025-01-
 | Source | Tab | Output |
 |--------|-----|--------|
 | `data/notes.json` | Home | `photos/home/<date>/` |
-| `data/message.json` | Chat | `photos/chat/<date>/` |
+| `data/message.json` | Chat | `photos/chat/<kid>/<date>/` |
 
 **Embedded metadata:**
 - Date/time (photos appear on correct date in timeline)

@@ -97,13 +97,16 @@ def main():
             new_folders.append(folder)
 
     if not args.home_only:
-        # Chat uses kid subfolders, not dated folders
+        # Chat creates its own kid/date subfolders internally
         folder, success = run_script('download_chat.py', 'data/message.json', 'photos/chat', use_dated_folder=False)
         results.append(('Chat', success, folder))
         if folder:
-            # List kid subfolders instead of the parent
-            kid_folders = [f for f in folder.iterdir() if f.is_dir()]
-            new_folders.extend(kid_folders if kid_folders else [folder])
+            # Find the dated folders inside each kid folder
+            for kid_folder in folder.iterdir():
+                if kid_folder.is_dir():
+                    for dated_folder in kid_folder.iterdir():
+                        if dated_folder.is_dir() and list(dated_folder.glob('*')):
+                            new_folders.append(dated_folder)
 
     print(f"\n{'='*60}")
     print("Summary")
