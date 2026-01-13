@@ -87,9 +87,12 @@ show up on the map in your photo app.
     country = input("Country [United States]: ").strip() or "United States"
 
     # Get coordinates
-    print("\nFor GPS coordinates, you can look up your school on Google Maps,")
-    print("right-click, and copy the coordinates (e.g., 37.3195, -122.0448)")
-    coords = input("\nCoordinates (lat, lng) or press Enter to skip GPS: ").strip()
+    print("\nTo get GPS coordinates:")
+    print("  1. Go to Google Maps and search for your school")
+    print("  2. Right-click on the school's location")
+    print("  3. Click the coordinates at the top of the menu (e.g., 37.3195, -122.0448)")
+    print("  4. They're now copied - paste them below")
+    coords = input("\nPaste coordinates (or press Enter to skip GPS): ").strip()
 
     latitude = None
     longitude = None
