@@ -4,8 +4,8 @@ Interactive sync tool for Learning Genie photos.
 Walks you through the entire process step by step.
 
 Usage:
-    ./sync.py         # Manual mode (copy cURL commands)
-    ./sync.py --auto  # Automatic mode (browser automation)
+    ./sync.py           # Automatic mode (browser automation)
+    ./sync.py --manual  # Manual mode (copy cURL commands)
 """
 
 import argparse
@@ -95,7 +95,7 @@ def run_auto_login():
 
 def main():
     parser = argparse.ArgumentParser(description='Sync photos from Learning Genie')
-    parser.add_argument('--auto', action='store_true', help='Use browser automation instead of manual cURL')
+    parser.add_argument('--manual', action='store_true', help='Use manual cURL copying instead of browser automation')
     args = parser.parse_args()
 
     print_header("Learning Genie Photo Sync")
@@ -103,19 +103,23 @@ def main():
     # First run setup
     check_first_run()
 
-    # Auto mode: use browser automation
-    if args.auto:
-        print("Using automatic browser login...\n")
-        success = run_auto_login()
-        if not success:
-            print("\nAuto-login failed.")
-            sys.exit(1)
+    # Manual mode: guide through cURL copying
+    if args.manual:
+        run_manual_mode()
         return
 
-    # Manual mode: guide through cURL copying
+    # Auto mode (default): use browser automation
+    print("Using automatic browser login...\n")
+    success = run_auto_login()
+    if not success:
+        print("\nAuto-login failed. Try './sync.py --manual' for manual mode.")
+        sys.exit(1)
+
+
+def run_manual_mode():
+    """Guide user through manual cURL copying process."""
     print("This tool will help you download photos from Learning Genie.")
-    print("You'll need to copy some data from Chrome DevTools.")
-    print("\nTip: Use './sync.py --auto' for automatic browser login.\n")
+    print("You'll need to copy some data from Chrome DevTools.\n")
 
     print("Ready? Let's go!\n")
     input("Press Enter to continue...")

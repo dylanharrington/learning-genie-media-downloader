@@ -9,8 +9,8 @@ A Python tool to download photos and videos from Learning Genie (daycare/school 
 ## Commands
 
 ```bash
-./sync.py --auto             # Auto-login via browser (recommended)
-./sync.py                    # Manual mode (copy cURL commands)
+./sync.py                    # Auto-login via browser (default)
+./sync.py --manual           # Manual mode (copy cURL commands)
 ./login.py                   # Just the auto-login step
 ./login.py --no-headless     # Show browser window (debugging)
 

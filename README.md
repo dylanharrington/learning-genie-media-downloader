@@ -4,24 +4,30 @@ Download photos and videos from Learning Genie with embedded metadata (dates, lo
 
 ## Quick Start
 
-### 1. Install requirements
+### 1. Install dependencies
 
 ```bash
-brew install exiftool   # Mac (for embedding photo metadata)
+brew install exiftool
+pip install playwright && playwright install chromium
 ```
 
-### 2. Run the sync tool
+### 2. Run sync
 
 ```bash
-./sync.py --auto   # Automatic login (recommended)
-./sync.py          # Manual mode (copy cURL commands)
+./sync.py
 ```
 
-**Automatic mode** logs in via browser automation - just enter your email and password.
+That's it! The tool will:
+1. Open a browser and log in to Learning Genie
+2. Fetch your photos from the Home and Chat tabs
+3. Download everything with embedded metadata (dates, GPS, titles)
 
-**Manual mode** walks you through copying cURL commands from Chrome DevTools.
+<details>
+<summary>Manual mode (if browser automation doesn't work)</summary>
 
-### That's it!
+If you can't use browser automation, run `./sync.py --manual` and follow the prompts to copy cURL commands from Chrome DevTools.
+
+</details>
 
 Photos are organized and deduplicated automatically:
 ```
@@ -86,30 +92,17 @@ To change later, delete `config.json` and run `./sync.py` again, or edit `config
 
 ---
 
-## Automatic Login
+## Password Options
 
-The `--auto` flag uses browser automation to log in automatically. Your email is saved to `config.json` after the first run.
+Your email is saved to `config.json` after the first run. For the password, the tool checks (in order):
 
-**Password options** (checked in order):
 1. **1Password CLI**: Set up with `op://vault/Learning Genie/password` path
 2. **Environment variable**: `export LG_PASSWORD=yourpassword`
 3. **Prompt**: Asked each time if neither above is configured
 
-```bash
-# First-time setup
-.venv/bin/pip install playwright
-.venv/bin/playwright install chromium
-
-# Run with auto-login
-./sync.py --auto
-```
-
 ---
 
 ## Troubleshooting
-
-### Token expired (manual mode)
-If you get auth errors, the tokens have expired. Go back to Learning Genie, refresh, and copy fresh cURL commands.
 
 ### Photos not showing correct date
 Make sure `exiftool` is installed: `brew install exiftool`
