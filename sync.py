@@ -9,12 +9,12 @@ Usage:
 """
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR / 'scripts'))
 from config import load_config, prompt_for_location
 
 
@@ -54,25 +54,16 @@ def get_multiline_input(prompt):
 
 
 def run_fetch(qb_curl=None, lg_curl=None):
-    """Run fetch.py with provided cURLs."""
-    cmd = [sys.executable, str(SCRIPT_DIR / 'fetch.py')]
-
-    if qb_curl:
-        cmd.extend(['--qb-curl', qb_curl])
-    if lg_curl:
-        cmd.extend(['--lg-curl', lg_curl])
-
-    result = subprocess.run(cmd, cwd=SCRIPT_DIR)
-    return result.returncode == 0
+    """Run fetch with provided cURLs."""
+    from fetch import run as fetch_run
+    return fetch_run(qb_curl=qb_curl, lg_curl=lg_curl)
 
 
 def run_download():
-    """Run download.py."""
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT_DIR / 'download.py')],
-        cwd=SCRIPT_DIR
-    )
-    return result.returncode == 0
+    """Run download."""
+    from download import run as download_run
+    download_run()
+    return True
 
 
 def check_first_run():
@@ -85,12 +76,34 @@ def check_first_run():
 
 
 def run_auto_login():
-    """Run login.py for automatic browser-based authentication."""
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT_DIR / 'login.py')],
-        cwd=SCRIPT_DIR
-    )
-    return result.returncode == 0
+    """Run automatic browser-based authentication."""
+    from login import get_credentials, login_and_capture_tokens, run_download, run_fetch
+
+    email, password = get_credentials()
+    tokens = login_and_capture_tokens(email, password, headless=True)
+
+    # Check what we got
+    missing = []
+    if not tokens['lg_session']:
+        missing.append('lg_session')
+    if not tokens['x_uid']:
+        missing.append('x_uid')
+    if not tokens['qb_token']:
+        missing.append('QB-Token')
+
+    if missing:
+        print(f"\n⚠ Warning: Could not capture: {', '.join(missing)}")
+
+    # Run fetch and download
+    if tokens['lg_session'] or tokens['qb_token']:
+        if run_fetch(tokens):
+            run_download()
+            return True
+    else:
+        print("\nError: No tokens captured. Cannot proceed with sync.")
+        return False
+
+    return True
 
 
 def main():

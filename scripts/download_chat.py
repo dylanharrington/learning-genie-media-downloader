@@ -27,10 +27,11 @@ LOCATION = get_location()
 TEXT_ASSOCIATION_WINDOW = 120
 
 
-def check_exiftool():
+def check_exiftool(exiftool_path=None):
     """Check if exiftool is available."""
+    cmd = exiftool_path or 'exiftool'
     try:
-        subprocess.run(['exiftool', '-ver'], capture_output=True, check=True)
+        subprocess.run([cmd, '-ver'], capture_output=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -267,7 +268,7 @@ def get_location_args(file_type):
     return args
 
 
-def set_metadata(downloaded_files, has_exiftool):
+def set_metadata(downloaded_files, has_exiftool, exiftool_path=None):
     """Set date and location metadata on downloaded files using exiftool."""
     if not has_exiftool:
         print("\nWarning: exiftool not found. Skipping metadata update.")
@@ -275,13 +276,14 @@ def set_metadata(downloaded_files, has_exiftool):
         return
 
     print(f"\nSetting metadata on {len(downloaded_files)} files...")
+    exiftool_cmd = exiftool_path or 'exiftool'
 
     for i, item in enumerate(downloaded_files):
         filepath, date_str, file_type, title, description = item
         filename = os.path.basename(filepath)
         print(f"[{i+1}/{len(downloaded_files)}] Setting metadata on {filename}")
 
-        args = ['exiftool', '-overwrite_original', '-q']
+        args = [exiftool_cmd, '-overwrite_original', '-q']
 
         # Add location args
         args.extend(get_location_args(file_type))
@@ -331,19 +333,21 @@ def sanitize_folder_name(name):
     return safe.strip('_')
 
 
-def main():
-    script_dir = Path(__file__).parent
-    messages_path = sys.argv[1] if len(sys.argv) > 1 else str(script_dir / 'message.json')
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else str(script_dir / 'messages')
+def run(messages_path, output_dir, exiftool_path=None):
+    """
+    Download photos from message.json. Can be called directly or via CLI.
+    Returns list of newly downloaded file paths.
+    """
+    global LOCATION
+    LOCATION = get_location()  # Refresh in case config changed
 
     if not os.path.exists(messages_path):
         print(f"Error: {messages_path} not found")
-        sys.exit(1)
+        return []
 
-    has_exiftool = check_exiftool()
+    has_exiftool = check_exiftool(exiftool_path)
     if not has_exiftool:
         print("Warning: exiftool not found. Dates and location will not be embedded in files.")
-        print("Install with: brew install exiftool\n")
 
     # Parse messages
     media_items = parse_messages(messages_path)
@@ -351,7 +355,7 @@ def main():
 
     if not media_items:
         print("No media found.")
-        sys.exit(0)
+        return []
 
     # Group by dialog (kid)
     by_dialog = defaultdict(list)
@@ -359,7 +363,7 @@ def main():
         dialog = item.get('dialog_name', 'Unknown')
         by_dialog[dialog].append(item)
 
-    # Download each dialog's media to its own dated subfolder
+    # Download each dialog's media to its own subfolder
     all_downloaded = []
     for dialog_name, items in by_dialog.items():
         kid_folder = sanitize_folder_name(dialog_name)
@@ -370,12 +374,22 @@ def main():
         all_downloaded.extend(downloaded)
 
     # Set metadata (dates and location)
-    set_metadata(all_downloaded, has_exiftool)
+    set_metadata(all_downloaded, has_exiftool, exiftool_path)
 
     # Summary
     jpg_count = sum(1 for item in all_downloaded if item[2] == 'jpg')
     mp4_count = sum(1 for item in all_downloaded if item[2] == 'mp4')
     print(f"\nDone! {len(all_downloaded)} files ({jpg_count} photos, {mp4_count} videos)")
+
+    return [item[0] for item in all_downloaded]  # Return file paths
+
+
+def main():
+    script_dir = Path(__file__).parent
+    messages_path = sys.argv[1] if len(sys.argv) > 1 else str(script_dir / 'message.json')
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else str(script_dir / 'messages')
+
+    run(messages_path, output_dir)
 
 
 if __name__ == '__main__':

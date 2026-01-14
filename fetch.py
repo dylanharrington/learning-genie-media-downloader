@@ -137,11 +137,70 @@ def fetch_notes(lg_session, x_uid):
     return all_notes
 
 
+def run(qb_token=None, lg_session=None, x_uid=None, qb_curl=None, lg_curl=None,
+        messages_out='data/message.json', notes_out='data/notes.json'):
+    """
+    Fetch Learning Genie data. Can be called directly or via CLI.
+    Returns True on success, False on failure.
+    """
+    # Parse cURL if provided
+    if qb_curl and not qb_token:
+        url, headers = parse_curl(qb_curl)
+        qb_token = headers.get('QB-Token')
+
+    if lg_curl and not (lg_session and x_uid):
+        url, headers = parse_curl(lg_curl)
+        cookie = headers.get('Cookie', '')
+        session_match = re.search(r'lg_session=([^;]+)', cookie)
+        if session_match:
+            lg_session = session_match.group(1)
+        x_uid = headers.get('x-uid')
+
+    has_qb = bool(qb_token)
+    has_lg = bool(lg_session and x_uid)
+
+    if not has_qb and not has_lg:
+        print("Error: No valid tokens provided")
+        return False
+
+    # Ensure data directory exists
+    os.makedirs(SCRIPT_DIR / 'data', exist_ok=True)
+
+    success = True
+
+    # Fetch messages if QB token available
+    if qb_token:
+        print(f"Found QB-Token: {qb_token[:50]}...")
+        messages = fetch_messages(qb_token)
+
+        if messages and messages['items']:
+            with open(SCRIPT_DIR / messages_out, 'w') as f:
+                json.dump(messages, f, indent=2)
+            print(f"Saved {len(messages['items'])} messages to {messages_out}")
+        else:
+            success = False
+
+    # Fetch notes if LG tokens available
+    if lg_session and x_uid:
+        print(f"Found lg_session: {lg_session[:30]}...")
+        print(f"Found x-uid: {x_uid}")
+
+        notes = fetch_notes(lg_session, x_uid)
+
+        if notes and len(notes) > 0:
+            with open(SCRIPT_DIR / notes_out, 'w') as f:
+                json.dump(notes, f, indent=2)
+            print(f"Saved {len(notes)} notes to {notes_out}")
+        else:
+            success = False
+
+    return success
+
+
 def main():
     parser = argparse.ArgumentParser(description='Fetch Learning Genie data')
     parser.add_argument('--qb-curl', help='cURL command from QuickBlox (Dialog.json or Message.json)')
     parser.add_argument('--lg-curl', help='cURL command from Learning Genie (Notes or any api2 request)')
-    # Direct token arguments (used by login.py)
     parser.add_argument('--qb-token', help='QuickBlox token (alternative to --qb-curl)')
     parser.add_argument('--lg-session', help='Learning Genie session cookie (alternative to --lg-curl)')
     parser.add_argument('--x-uid', help='Learning Genie x-uid header (use with --lg-session)')
@@ -149,7 +208,6 @@ def main():
     parser.add_argument('--notes-out', default='data/notes.json', help='Output file for notes')
     args = parser.parse_args()
 
-    # Check for either cURL or direct tokens
     has_qb = args.qb_curl or args.qb_token
     has_lg = args.lg_curl or (args.lg_session and args.x_uid)
 
@@ -159,48 +217,16 @@ def main():
         print("  ./fetch.py --qb-curl 'curl https://apilearninggenie.quickblox.com/...'")
         sys.exit(1)
 
-    # Ensure data directory exists
-    os.makedirs(SCRIPT_DIR / 'data', exist_ok=True)
-
-    # Fetch messages if QB token available
-    qb_token = args.qb_token
-    if args.qb_curl and not qb_token:
-        url, headers = parse_curl(args.qb_curl)
-        qb_token = headers.get('QB-Token')
-
-    if qb_token:
-        print(f"Found QB-Token: {qb_token[:50]}...")
-        messages = fetch_messages(qb_token)
-
-        if messages and messages['items']:
-            with open(args.messages_out, 'w') as f:
-                json.dump(messages, f, indent=2)
-            print(f"Saved {len(messages['items'])} messages to {args.messages_out}")
-
-    # Fetch notes if LG tokens available
-    lg_session = args.lg_session
-    x_uid = args.x_uid
-
-    if args.lg_curl and not (lg_session and x_uid):
-        url, headers = parse_curl(args.lg_curl)
-
-        cookie = headers.get('Cookie', '')
-        session_match = re.search(r'lg_session=([^;]+)', cookie)
-        if session_match:
-            lg_session = session_match.group(1)
-
-        x_uid = headers.get('x-uid')
-
-    if lg_session and x_uid:
-        print(f"Found lg_session: {lg_session[:30]}...")
-        print(f"Found x-uid: {x_uid}")
-
-        notes = fetch_notes(lg_session, x_uid)
-
-        if notes and len(notes) > 0:
-            with open(args.notes_out, 'w') as f:
-                json.dump(notes, f, indent=2)
-            print(f"Saved {len(notes)} notes to {args.notes_out}")
+    success = run(
+        qb_token=args.qb_token,
+        lg_session=args.lg_session,
+        x_uid=args.x_uid,
+        qb_curl=args.qb_curl,
+        lg_curl=args.lg_curl,
+        messages_out=args.messages_out,
+        notes_out=args.notes_out,
+    )
+    sys.exit(0 if success else 1)
 
 
 if __name__ == '__main__':

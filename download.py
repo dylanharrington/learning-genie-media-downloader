@@ -12,11 +12,13 @@ New files are copied to photos/new/ for easy import to your photo library.
 
 import argparse
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+sys.path.insert(0, str(SCRIPT_DIR / 'scripts'))
+
 PHOTOS_DIR = SCRIPT_DIR / 'photos'
 NEW_FILES_DIR = PHOTOS_DIR / 'new'
 
@@ -27,53 +29,10 @@ def clear_new_folder():
         shutil.rmtree(NEW_FILES_DIR)
 
 
-def get_all_media_files(path):
-    """Get set of all media files in a directory."""
-    files = set()
-    if path.exists():
-        files.update(path.rglob('*.jpg'))
-        files.update(path.rglob('*.mp4'))
-    return files
-
-
-def run_script(script, json_file, output_dir):
-    """Run a download script and return list of new files."""
-    script_path = SCRIPT_DIR / 'scripts' / script
-    json_path = SCRIPT_DIR / json_file
-    output_path = SCRIPT_DIR / output_dir
-
-    if not json_path.exists():
-        print(f"Skipping {script}: {json_file} not found")
-        return [], False
-
-    output_path.mkdir(parents=True, exist_ok=True)
-
-    print(f"\n{'='*60}")
-    print(f"Downloading from {json_file}")
-    print(f"Output: {output_path.relative_to(SCRIPT_DIR)}/")
-    print('='*60)
-
-    # Get files before download
-    files_before = get_all_media_files(output_path)
-
-    # Run download (output streams in real-time)
-    result = subprocess.run(
-        [sys.executable, str(script_path), str(json_path), str(output_path)],
-        cwd=SCRIPT_DIR
-    )
-
-    # Get files after download
-    files_after = get_all_media_files(output_path)
-
-    # New files are the difference
-    new_files = list(files_after - files_before)
-
-    return new_files, result.returncode == 0
-
-
 def copy_to_new_folder(files):
     """Copy files to the 'new' folder, preserving directory structure."""
     for src in files:
+        src = Path(src)
         # Preserve structure: photos/home/x.jpg -> photos/new/home/x.jpg
         rel_path = src.relative_to(PHOTOS_DIR)
         dst = NEW_FILES_DIR / rel_path
@@ -81,15 +40,13 @@ def copy_to_new_folder(files):
         shutil.copy2(src, dst)
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Download Learning Genie photos')
-    parser.add_argument('--home-only', action='store_true', help='Only download Home photos')
-    parser.add_argument('--chat-only', action='store_true', help='Only download Chat photos')
-    args = parser.parse_args()
-
-    if args.home_only and args.chat_only:
-        print("Error: Cannot specify both --home-only and --chat-only")
-        sys.exit(1)
+def run(home_only=False, chat_only=False, exiftool_path=None):
+    """
+    Download photos from Learning Genie data files.
+    Returns list of all newly downloaded files.
+    """
+    from download_chat import run as run_chat
+    from download_home import run as run_home
 
     # Clear the 'new' folder at start
     clear_new_folder()
@@ -97,15 +54,41 @@ def main():
     results = []
     all_new_files = []
 
-    if not args.chat_only:
-        new_files, success = run_script('download_home.py', 'data/notes.json', 'photos/home')
-        results.append(('Home', success, len(new_files)))
-        all_new_files.extend(new_files)
+    if not chat_only:
+        notes_path = SCRIPT_DIR / 'data' / 'notes.json'
+        output_dir = PHOTOS_DIR / 'home'
 
-    if not args.home_only:
-        new_files, success = run_script('download_chat.py', 'data/message.json', 'photos/chat')
-        results.append(('Chat', success, len(new_files)))
-        all_new_files.extend(new_files)
+        if notes_path.exists():
+            print(f"\n{'='*60}")
+            print("Downloading from data/notes.json")
+            print("Output: photos/home/")
+            print('='*60)
+
+            output_dir.mkdir(parents=True, exist_ok=True)
+            new_files = run_home(str(notes_path), str(output_dir), exiftool_path)
+            results.append(('Home', True, len(new_files)))
+            all_new_files.extend(new_files)
+        else:
+            print("Skipping Home: data/notes.json not found")
+            results.append(('Home', False, 0))
+
+    if not home_only:
+        messages_path = SCRIPT_DIR / 'data' / 'message.json'
+        output_dir = PHOTOS_DIR / 'chat'
+
+        if messages_path.exists():
+            print(f"\n{'='*60}")
+            print("Downloading from data/message.json")
+            print("Output: photos/chat/")
+            print('='*60)
+
+            output_dir.mkdir(parents=True, exist_ok=True)
+            new_files = run_chat(str(messages_path), str(output_dir), exiftool_path)
+            results.append(('Chat', True, len(new_files)))
+            all_new_files.extend(new_files)
+        else:
+            print("Skipping Chat: data/message.json not found")
+            results.append(('Chat', False, 0))
 
     # Copy new files to the 'new' folder
     if all_new_files:
@@ -127,6 +110,7 @@ def main():
         # List subfolders with new files
         new_folders = set()
         for f in all_new_files:
+            f = Path(f)
             rel_path = f.relative_to(PHOTOS_DIR)
             # Get the folder (home or chat/Kid_Name)
             parts = rel_path.parts[:-1]  # Remove filename
@@ -135,6 +119,21 @@ def main():
             print(f"  photos/new/{folder}/")
     else:
         print("\nNo new files to import.")
+
+    return all_new_files
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Download Learning Genie photos')
+    parser.add_argument('--home-only', action='store_true', help='Only download Home photos')
+    parser.add_argument('--chat-only', action='store_true', help='Only download Chat photos')
+    args = parser.parse_args()
+
+    if args.home_only and args.chat_only:
+        print("Error: Cannot specify both --home-only and --chat-only")
+        sys.exit(1)
+
+    run(home_only=args.home_only, chat_only=args.chat_only)
 
 
 if __name__ == '__main__':

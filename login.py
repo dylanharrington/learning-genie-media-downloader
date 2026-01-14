@@ -203,36 +203,30 @@ def login_and_capture_tokens(email, password, headless=True):
 
 
 def run_fetch(tokens):
-    """Run fetch.py with captured tokens."""
+    """Run fetch with captured tokens."""
+    from fetch import run as fetch_run
+
     print("\n" + "="*60)
     print("Running fetch with captured tokens...")
     print("="*60 + "\n")
 
-    cmd = [sys.executable, str(SCRIPT_DIR / 'fetch.py')]
-
-    # Pass tokens directly (no fake cURL needed)
-    if tokens['lg_session'] and tokens['x_uid']:
-        cmd.extend(['--lg-session', tokens['lg_session']])
-        cmd.extend(['--x-uid', tokens['x_uid']])
-
-    if tokens['qb_token']:
-        cmd.extend(['--qb-token', tokens['qb_token']])
-
-    result = subprocess.run(cmd, cwd=SCRIPT_DIR)
-    return result.returncode == 0
+    return fetch_run(
+        qb_token=tokens.get('qb_token'),
+        lg_session=tokens.get('lg_session'),
+        x_uid=tokens.get('x_uid'),
+    )
 
 
 def run_download():
-    """Run download.py."""
+    """Run download."""
+    from download import run as download_run
+
     print("\n" + "="*60)
     print("Downloading photos...")
     print("="*60 + "\n")
 
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT_DIR / 'download.py')],
-        cwd=SCRIPT_DIR
-    )
-    return result.returncode == 0
+    download_run()
+    return True
 
 
 def main():
