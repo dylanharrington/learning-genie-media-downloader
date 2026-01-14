@@ -4,11 +4,11 @@ Download photos and videos from Learning Genie with embedded metadata (dates, lo
 
 ## Quick Start
 
-### 1. Install dependencies
+### 1. Install dependencies (macOS)
 
 ```bash
 brew install exiftool
-pip install playwright && playwright install chromium
+pip3 install playwright && playwright install chromium
 ```
 
 ### 2. Run sync
