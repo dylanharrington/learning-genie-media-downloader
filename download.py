@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Download all photos from Learning Genie data.
+Download all photos from LearningGenie data.
 
 Usage:
     ./download.py              # Download photos
@@ -17,15 +17,15 @@ from pathlib import Path
 
 # In bundled app, use cwd (set by app_main.py to data dir)
 # Otherwise use script directory
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     SCRIPT_DIR = Path.cwd()
 else:
     SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
-sys.path.insert(0, str(SCRIPT_DIR / 'scripts'))
+sys.path.insert(0, str(SCRIPT_DIR / "scripts"))
 
-PHOTOS_DIR = SCRIPT_DIR / 'photos'
-NEW_FILES_DIR = PHOTOS_DIR / 'new'
+PHOTOS_DIR = SCRIPT_DIR / "photos"
+NEW_FILES_DIR = PHOTOS_DIR / "new"
 
 
 def clear_new_folder():
@@ -47,7 +47,7 @@ def copy_to_new_folder(files):
 
 def run(home_only=False, chat_only=False, exiftool_path=None):
     """
-    Download photos from Learning Genie data files.
+    Download photos from LearningGenie data files.
     Returns list of all newly downloaded files.
     """
     from download_chat import run as run_chat
@@ -60,48 +60,48 @@ def run(home_only=False, chat_only=False, exiftool_path=None):
     all_new_files = []
 
     if not chat_only:
-        notes_path = SCRIPT_DIR / 'data' / 'notes.json'
-        output_dir = PHOTOS_DIR / 'home'
+        notes_path = SCRIPT_DIR / "data" / "notes.json"
+        output_dir = PHOTOS_DIR / "home"
 
         if notes_path.exists():
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print("Downloading from data/notes.json")
             print("Output: photos/home/")
-            print('='*60)
+            print("=" * 60)
 
             output_dir.mkdir(parents=True, exist_ok=True)
             new_files = run_home(str(notes_path), str(output_dir), exiftool_path)
-            results.append(('Home', True, len(new_files)))
+            results.append(("Home", True, len(new_files)))
             all_new_files.extend(new_files)
         else:
             print("Skipping Home: data/notes.json not found")
-            results.append(('Home', False, 0))
+            results.append(("Home", False, 0))
 
     if not home_only:
-        messages_path = SCRIPT_DIR / 'data' / 'message.json'
-        output_dir = PHOTOS_DIR / 'chat'
+        messages_path = SCRIPT_DIR / "data" / "message.json"
+        output_dir = PHOTOS_DIR / "chat"
 
         if messages_path.exists():
-            print(f"\n{'='*60}")
+            print(f"\n{'=' * 60}")
             print("Downloading from data/message.json")
             print("Output: photos/chat/")
-            print('='*60)
+            print("=" * 60)
 
             output_dir.mkdir(parents=True, exist_ok=True)
             new_files = run_chat(str(messages_path), str(output_dir), exiftool_path)
-            results.append(('Chat', True, len(new_files)))
+            results.append(("Chat", True, len(new_files)))
             all_new_files.extend(new_files)
         else:
             print("Skipping Chat: data/message.json not found")
-            results.append(('Chat', False, 0))
+            results.append(("Chat", False, 0))
 
     # Copy new files to the 'new' folder
     if all_new_files:
         copy_to_new_folder(all_new_files)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Summary")
-    print('='*60)
+    print("=" * 60)
     for name, success, count in results:
         if count > 0:
             print(f"  {name}: {count} new files")
@@ -119,7 +119,7 @@ def run(home_only=False, chat_only=False, exiftool_path=None):
             rel_path = f.relative_to(PHOTOS_DIR)
             # Get the folder (home or chat/Kid_Name)
             parts = rel_path.parts[:-1]  # Remove filename
-            new_folders.add('/'.join(parts))
+            new_folders.add("/".join(parts))
         for folder in sorted(new_folders):
             print(f"  photos/new/{folder}/")
     else:
@@ -129,9 +129,9 @@ def run(home_only=False, chat_only=False, exiftool_path=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Download Learning Genie photos')
-    parser.add_argument('--home-only', action='store_true', help='Only download Home photos')
-    parser.add_argument('--chat-only', action='store_true', help='Only download Chat photos')
+    parser = argparse.ArgumentParser(description="Download LearningGenie photos")
+    parser.add_argument("--home-only", action="store_true", help="Only download Home photos")
+    parser.add_argument("--chat-only", action="store_true", help="Only download Chat photos")
     args = parser.parse_args()
 
     if args.home_only and args.chat_only:
@@ -141,5 +141,5 @@ def main():
     run(home_only=args.home_only, chat_only=args.chat_only)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -17,14 +17,14 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
-BUILD_DIR = SCRIPT_DIR / 'build'
-DIST_DIR = SCRIPT_DIR / 'dist'
-BUNDLE_DIR = BUILD_DIR / 'bundle_data'
+BUILD_DIR = SCRIPT_DIR / "build"
+DIST_DIR = SCRIPT_DIR / "dist"
+BUNDLE_DIR = BUILD_DIR / "bundle_data"
 
 
 def find_exiftool():
     """Find the exiftool installation."""
-    result = subprocess.run(['which', 'exiftool'], capture_output=True, text=True)
+    result = subprocess.run(["which", "exiftool"], capture_output=True, text=True)
     if result.returncode != 0:
         print("Error: exiftool not found. Install with: brew install exiftool")
         sys.exit(1)
@@ -40,7 +40,7 @@ def find_exiftool():
 
 def copy_exiftool(exiftool_dir, dest):
     """Copy exiftool to bundle."""
-    dest_exiftool = dest / 'exiftool'
+    dest_exiftool = dest / "exiftool"
     if dest_exiftool.exists():
         shutil.rmtree(dest_exiftool)
 
@@ -48,15 +48,15 @@ def copy_exiftool(exiftool_dir, dest):
 
     # Copy bin and lib directories
     dest_exiftool.mkdir(parents=True)
-    shutil.copytree(exiftool_dir / 'bin', dest_exiftool / 'bin')
-    shutil.copytree(exiftool_dir / 'libexec', dest_exiftool / 'libexec')
+    shutil.copytree(exiftool_dir / "bin", dest_exiftool / "bin")
+    shutil.copytree(exiftool_dir / "libexec", dest_exiftool / "libexec")
 
     return dest_exiftool
 
 
 def create_wrapper_script():
     """Create a wrapper script that sets up paths before running the app."""
-    wrapper = SCRIPT_DIR / 'app_main.py'
+    wrapper = SCRIPT_DIR / "app_main.py"
     wrapper.write_text('''#!/usr/bin/env python3
 """
 Main entry point for the bundled app.
@@ -82,8 +82,8 @@ def get_bundle_dir():
 def get_data_dir():
     """Get the data directory for user files (config, photos, etc)."""
     if getattr(sys, 'frozen', False):
-        # Use ~/Documents/Learning Genie for user data
-        data_dir = Path.home() / 'Documents' / 'Learning Genie'
+        # Use ~/Documents/LearningGenie for user data
+        data_dir = Path.home() / 'Documents' / 'LearningGenie'
     else:
         data_dir = Path(__file__).parent
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -178,16 +178,16 @@ def ensure_chromium():
 def main():
     # Quick exit for --help
     if '--help' in sys.argv or '-h' in sys.argv:
-        print("Learning Genie Downloader")
+        print("LearningGenie Downloader")
         print()
-        print("Usage: Learning Genie Downloader [--manual]")
+        print("Usage: LearningGenie Downloader [--manual]")
         print()
         print("Options:")
         print("  --manual    Use manual cURL copying instead of browser automation")
         print("  --help      Show this help message")
         print()
         print("On first run, Chromium browser will be downloaded (~150MB).")
-        print("Photos are saved to ~/Documents/Learning Genie/")
+        print("Photos are saved to ~/Documents/LearningGenie/")
         return
 
     data_dir = setup_environment()
@@ -221,21 +221,34 @@ def run_pyinstaller(wrapper_script):
     print("\\nRunning PyInstaller...")
 
     cmd = [
-        sys.executable, '-m', 'PyInstaller',
-        '--name', 'Learning Genie Downloader',
-        '--onefile',
-        '--console',  # Keep console for now so we can see output
-        '--add-data', f'{BUNDLE_DIR / "exiftool"}:exiftool',
-        '--add-data', 'config.py:.',
-        '--add-data', 'fetch.py:.',
-        '--add-data', 'download.py:.',
-        '--add-data', 'login.py:.',
-        '--add-data', 'sync.py:.',
-        '--add-data', 'scripts:scripts',
-        '--hidden-import', 'playwright',
-        '--hidden-import', 'playwright.sync_api',
-        '--collect-all', 'playwright',
-        '--noconfirm',
+        sys.executable,
+        "-m",
+        "PyInstaller",
+        "--name",
+        "LearningGenie Downloader",
+        "--onefile",
+        "--console",  # Keep console for now so we can see output
+        "--add-data",
+        f"{BUNDLE_DIR / 'exiftool'}:exiftool",
+        "--add-data",
+        "config.py:.",
+        "--add-data",
+        "fetch.py:.",
+        "--add-data",
+        "download.py:.",
+        "--add-data",
+        "login.py:.",
+        "--add-data",
+        "sync.py:.",
+        "--add-data",
+        "scripts:scripts",
+        "--hidden-import",
+        "playwright",
+        "--hidden-import",
+        "playwright.sync_api",
+        "--collect-all",
+        "playwright",
+        "--noconfirm",
         str(wrapper_script),
     ]
 
@@ -245,13 +258,13 @@ def run_pyinstaller(wrapper_script):
         sys.exit(1)
 
     print("\\nBuild complete!")
-    print(f"Executable: {DIST_DIR / 'Learning Genie Downloader'}")
+    print(f"Executable: {DIST_DIR / 'LearningGenie Downloader'}")
 
 
 def main():
-    print("="*60)
-    print("Building Learning Genie Downloader")
-    print("="*60 + "\\n")
+    print("=" * 60)
+    print("Building LearningGenie Downloader")
+    print("=" * 60 + "\\n")
 
     # Find exiftool
     exiftool_dir = find_exiftool()
@@ -269,5 +282,5 @@ def main():
     run_pyinstaller(wrapper)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

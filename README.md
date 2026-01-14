@@ -1,6 +1,6 @@
-# Learning Genie Media Downloader
+# LearningGenie Media Downloader
 
-Download photos and videos from Learning Genie with embedded metadata (dates, location, titles) for easy import into your photo library.
+Download photos and videos from LearningGenie with embedded metadata (dates, location, titles) for easy import into your photo library.
 
 ## Quick Start
 
@@ -10,7 +10,7 @@ Download photos and videos from Learning Genie with embedded metadata (dates, lo
 2. Unzip and run the app
 3. On first run, Chromium browser will download automatically (~150MB)
 
-Photos are saved to `~/Documents/Learning Genie/`.
+Photos are saved to `~/Documents/LearningGenie/`.
 
 ### Option B: Run from source
 
@@ -26,7 +26,7 @@ pip3 install playwright && playwright install chromium
 </details>
 
 The tool will:
-1. Open a browser and log in to Learning Genie
+1. Open a browser and log in to LearningGenie
 2. Fetch your photos from the Home and Chat tabs
 3. Download everything with embedded metadata (dates, GPS, titles)
 
@@ -60,7 +60,7 @@ After each sync, import from `photos/new/` - it mirrors the folder structure so 
 ```
 ├── sync.py               # Interactive tool - start here!
 ├── login.py              # Browser automation for --auto mode
-├── fetch.py              # Fetches JSON data from Learning Genie
+├── fetch.py              # Fetches JSON data from LearningGenie
 ├── download.py           # Downloads photos to dated folders
 ├── config.json           # Your settings (auto-generated)
 ├── data/
@@ -104,7 +104,7 @@ To change later, delete `config.json` and run `./sync.py` again, or edit `config
 
 Your email is saved to `config.json` after the first run. For the password, the tool checks (in order):
 
-1. **1Password CLI**: Set up with `op://vault/Learning Genie/password` path
+1. **1Password CLI**: Set up with `op://vault/LearningGenie/password` path
 2. **Environment variable**: `export LG_PASSWORD=yourpassword`
 3. **Prompt**: Asked each time if neither above is configured
 

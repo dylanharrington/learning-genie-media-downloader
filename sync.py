@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Interactive sync tool for Learning Genie photos.
+Interactive sync tool for LearningGenie photos.
 Walks you through the entire process step by step.
 
 Usage:
@@ -14,14 +14,14 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
-sys.path.insert(0, str(SCRIPT_DIR / 'scripts'))
+sys.path.insert(0, str(SCRIPT_DIR / "scripts"))
 from config import load_config, prompt_for_location
 
 
 def print_header(text):
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {text}")
-    print('='*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 def print_step(num, text):
@@ -39,7 +39,7 @@ def get_multiline_input(prompt):
     while True:
         try:
             line = input()
-            if line == '':
+            if line == "":
                 empty_count += 1
                 if empty_count >= 1 and lines:  # One empty line after content = done
                     break
@@ -50,18 +50,20 @@ def get_multiline_input(prompt):
         except EOFError:
             break
 
-    return ' '.join(line.strip() for line in lines if line.strip())
+    return " ".join(line.strip() for line in lines if line.strip())
 
 
 def run_fetch(qb_curl=None, lg_curl=None):
     """Run fetch with provided cURLs."""
     from fetch import run as fetch_run
+
     return fetch_run(qb_curl=qb_curl, lg_curl=lg_curl)
 
 
 def run_download():
     """Run download."""
     from download import run as download_run
+
     download_run()
     return True
 
@@ -71,7 +73,7 @@ def check_first_run():
     config = load_config()
 
     # If location hasn't been configured yet (None = never asked)
-    if config.get('location') is None:
+    if config.get("location") is None:
         prompt_for_location()
 
 
@@ -84,18 +86,18 @@ def run_auto_login():
 
     # Check what we got
     missing = []
-    if not tokens['lg_session']:
-        missing.append('lg_session')
-    if not tokens['x_uid']:
-        missing.append('x_uid')
-    if not tokens['qb_token']:
-        missing.append('QB-Token')
+    if not tokens["lg_session"]:
+        missing.append("lg_session")
+    if not tokens["x_uid"]:
+        missing.append("x_uid")
+    if not tokens["qb_token"]:
+        missing.append("QB-Token")
 
     if missing:
         print(f"\n⚠ Warning: Could not capture: {', '.join(missing)}")
 
     # Run fetch and download
-    if tokens['lg_session'] or tokens['qb_token']:
+    if tokens["lg_session"] or tokens["qb_token"]:
         if run_fetch(tokens):
             run_download()
             return True
@@ -107,11 +109,11 @@ def run_auto_login():
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Sync photos from Learning Genie')
-    parser.add_argument('--manual', action='store_true', help='Use manual cURL copying instead of browser automation')
+    parser = argparse.ArgumentParser(description="Sync photos from LearningGenie")
+    parser.add_argument("--manual", action="store_true", help="Use manual cURL copying instead of browser automation")
     args = parser.parse_args()
 
-    print_header("Learning Genie Photo Sync")
+    print_header("LearningGenie Photo Sync")
 
     # First run setup
     check_first_run()
@@ -131,7 +133,7 @@ def main():
 
 def run_manual_mode():
     """Guide user through manual cURL copying process."""
-    print("This tool will help you download photos from Learning Genie.")
+    print("This tool will help you download photos from LearningGenie.")
     print("You'll need to copy some data from Chrome DevTools.\n")
 
     print("Ready? Let's go!\n")
@@ -152,7 +154,7 @@ def run_manual_mode():
 
     lg_curl = get_multiline_input("Paste the cURL command here:")
 
-    if not lg_curl or 'curl' not in lg_curl.lower():
+    if not lg_curl or "curl" not in lg_curl.lower():
         print("\nNo valid cURL detected. Skipping Home photos.")
         lg_curl = None
     else:
@@ -171,7 +173,7 @@ def run_manual_mode():
 
     qb_curl = get_multiline_input("Paste the cURL command here:")
 
-    if not qb_curl or 'curl' not in qb_curl.lower():
+    if not qb_curl or "curl" not in qb_curl.lower():
         print("\nNo valid cURL detected. Skipping Chat photos.")
         qb_curl = None
     else:
@@ -182,7 +184,7 @@ def run_manual_mode():
         sys.exit(1)
 
     # Step 3: Fetch data
-    print_step(3, "Fetching data from Learning Genie")
+    print_step(3, "Fetching data from LearningGenie")
 
     success = run_fetch(qb_curl, lg_curl)
 
@@ -201,5 +203,5 @@ def run_manual_mode():
     print("Drag those folders into your photo library (Apple Photos, Google Photos, etc.)\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

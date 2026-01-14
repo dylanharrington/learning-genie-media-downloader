@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Configuration management for Learning Genie downloader.
+Configuration management for LearningGenie downloader.
 """
 
 import json
@@ -9,16 +9,16 @@ from pathlib import Path
 
 # In bundled app, use cwd (set by app_main.py to data dir)
 # Otherwise use script directory
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     SCRIPT_DIR = Path.cwd()
 else:
     SCRIPT_DIR = Path(__file__).parent
-CONFIG_FILE = SCRIPT_DIR / 'config.json'
+CONFIG_FILE = SCRIPT_DIR / "config.json"
 
 DEFAULT_CONFIG = {
-    'location': None,  # Will be set on first run
-    'email': None,     # Learning Genie login email
-    'op_path': None,   # 1Password path for password (e.g., "op://Private/Learning Genie/password")
+    "location": None,  # Will be set on first run
+    "email": None,  # LearningGenie login email
+    "op_path": None,  # 1Password path for password (e.g., "op://Private/LearningGenie/password")
 }
 
 
@@ -37,26 +37,26 @@ def load_config():
 
 def save_config(config):
     """Save config to file."""
-    with open(CONFIG_FILE, 'w') as f:
+    with open(CONFIG_FILE, "w") as f:
         json.dump(config, f, indent=2)
 
 
 def get_location():
     """Get configured location, or None if not set."""
     config = load_config()
-    return config.get('location')
+    return config.get("location")
 
 
 def get_email():
     """Get configured email, or None if not set."""
     config = load_config()
-    return config.get('email')
+    return config.get("email")
 
 
 def set_email(email):
     """Set the login email."""
     config = load_config()
-    config['email'] = email
+    config["email"] = email
     save_config(config)
     return email
 
@@ -64,13 +64,13 @@ def set_email(email):
 def get_op_path():
     """Get 1Password path for password, or None if not set."""
     config = load_config()
-    return config.get('op_path')
+    return config.get("op_path")
 
 
 def set_op_path(op_path):
     """Set the 1Password path for password retrieval."""
     config = load_config()
-    config['op_path'] = op_path
+    config["op_path"] = op_path
     save_config(config)
     return op_path
 
@@ -78,35 +78,35 @@ def set_op_path(op_path):
 def set_location(name, address, city, state, country, latitude, longitude):
     """Set the school location."""
     config = load_config()
-    config['location'] = {
-        'name': name,
-        'address': address,
-        'city': city,
-        'state': state,
-        'country': country,
-        'latitude': latitude,
-        'longitude': longitude,
+    config["location"] = {
+        "name": name,
+        "address": address,
+        "city": city,
+        "state": state,
+        "country": country,
+        "latitude": latitude,
+        "longitude": longitude,
     }
     save_config(config)
-    return config['location']
+    return config["location"]
 
 
 DE_ANZA_LOCATION = {
-    'name': 'De Anza Child Development Center',
-    'address': '21250 Stevens Creek Blvd',
-    'city': 'Cupertino',
-    'state': 'California',
-    'country': 'United States',
-    'latitude': 37.3195,
-    'longitude': -122.0448,
+    "name": "De Anza Child Development Center",
+    "address": "21250 Stevens Creek Blvd",
+    "city": "Cupertino",
+    "state": "California",
+    "country": "United States",
+    "latitude": 37.3195,
+    "longitude": -122.0448,
 }
 
 
 def prompt_for_location():
     """Interactive prompt to configure location."""
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("  Location Setup")
-    print("="*60)
+    print("=" * 60)
     print("""
 Photos can be tagged with your school's GPS location so they
 show up on the map in your photo app.
@@ -119,18 +119,18 @@ Which school?
 
     choice = input("Enter 1, 2, or 3: ").strip()
 
-    if choice == '1':
+    if choice == "1":
         # De Anza preset
         config = load_config()
-        config['location'] = DE_ANZA_LOCATION
+        config["location"] = DE_ANZA_LOCATION
         save_config(config)
         print(f"\n✓ Location set: {DE_ANZA_LOCATION['name']}")
         return DE_ANZA_LOCATION
 
-    if choice == '3' or choice.lower() in ('skip', 's', 'n', 'no', ''):
+    if choice == "3" or choice.lower() in ("skip", "s", "n", "no", ""):
         print("\nSkipping location. Photos won't have GPS coordinates.")
         config = load_config()
-        config['location'] = False  # Explicitly disabled
+        config["location"] = False  # Explicitly disabled
         save_config(config)
         return None
 
@@ -141,7 +141,7 @@ Which school?
     if not name:
         print("No name entered. Skipping location setup.")
         config = load_config()
-        config['location'] = False
+        config["location"] = False
         save_config(config)
         return None
 
@@ -162,7 +162,7 @@ Which school?
     longitude = None
     if coords:
         try:
-            parts = coords.replace(',', ' ').split()
+            parts = coords.replace(",", " ").split()
             latitude = float(parts[0])
             longitude = float(parts[1])
         except (ValueError, IndexError):

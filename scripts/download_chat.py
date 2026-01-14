@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Download photos and videos from Learning Genie Chat tab (message.json).
+Download photos and videos from LearningGenie Chat tab (message.json).
 
 Usage:
     ./scripts/download_chat.py data/message.json photos/chat
@@ -29,9 +29,9 @@ TEXT_ASSOCIATION_WINDOW = 120
 
 def check_exiftool(exiftool_path=None):
     """Check if exiftool is available."""
-    cmd = exiftool_path or 'exiftool'
+    cmd = exiftool_path or "exiftool"
     try:
-        subprocess.run([cmd, '-ver'], capture_output=True, check=True)
+        subprocess.run([cmd, "-ver"], capture_output=True, check=True)
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
@@ -39,24 +39,24 @@ def check_exiftool(exiftool_path=None):
 
 def is_thumbnail(url: str) -> bool:
     """Check if URL is a video thumbnail (ends with 'jpg' without a dot)."""
-    return bool(re.search(r'[0-9a-f]jpg$', url))
+    return bool(re.search(r"[0-9a-f]jpg$", url))
 
 
 def get_file_type(url: str) -> str:
     """Get file type from URL."""
-    if url.endswith('.mp4'):
-        return 'mp4'
-    elif url.endswith('.png'):
-        return 'jpg'  # These are actually JPEGs despite .png extension
-    return 'bin'
+    if url.endswith(".mp4"):
+        return "mp4"
+    elif url.endswith(".png"):
+        return "jpg"  # These are actually JPEGs despite .png extension
+    return "bin"
 
 
 def parse_iso_date(iso_str: str) -> str:
     """Convert ISO date to exiftool format: '2026-01-12T22:18:37Z' -> '2026:01:12 22:18:37'"""
     if not iso_str:
-        return ''
+        return ""
     # Remove 'T' and 'Z', replace date dashes with colons
-    return iso_str.replace('T', ' ').replace('Z', '').replace('-', ':', 2)
+    return iso_str.replace("T", " ").replace("Z", "").replace("-", ":", 2)
 
 
 def find_associated_text(items, current_idx, sender_id, date_sent):
@@ -70,14 +70,14 @@ def find_associated_text(items, current_idx, sender_id, date_sent):
             if 0 <= idx < len(items):
                 item = items[idx]
                 # Same sender?
-                if item.get('sender_id') != sender_id:
+                if item.get("sender_id") != sender_id:
                     continue
                 # Is it a text message with actual content?
-                msg = item.get('message', '')
-                if item.get('content_type') != 'txt' or msg in ['[image]', '[video]', '']:
+                msg = item.get("message", "")
+                if item.get("content_type") != "txt" or msg in ["[image]", "[video]", ""]:
                     continue
                 # Within time window?
-                other_date = item.get('date_sent', 0)
+                other_date = item.get("date_sent", 0)
                 if abs(other_date - date_sent) <= TEXT_ASSOCIATION_WINDOW:
                     return msg
     return None
@@ -88,26 +88,26 @@ def parse_messages(messages_path):
     with open(messages_path) as f:
         data = json.load(f)
 
-    items = data.get('items', [])
+    items = data.get("items", [])
     media_items = []
 
     for idx, item in enumerate(items):
-        attachments = item.get('attachments', [])
+        attachments = item.get("attachments", [])
         if not attachments:
             continue
 
-        sender_id = item.get('sender_id')
-        sender_name = item.get('user_name', 'Teacher')
-        date_sent = item.get('date_sent', 0)
-        created_at = item.get('created_at', '')
-        message_id = item.get('_id', '')
-        dialog_name = item.get('_dialog_name', 'Unknown')
+        sender_id = item.get("sender_id")
+        sender_name = item.get("user_name", "Teacher")
+        date_sent = item.get("date_sent", 0)
+        created_at = item.get("created_at", "")
+        message_id = item.get("_id", "")
+        dialog_name = item.get("_dialog_name", "Unknown")
 
         # Try to find associated text message for title
         associated_text = find_associated_text(items, idx, sender_id, date_sent)
 
         for i, attachment in enumerate(attachments):
-            url = attachment.get('url', '')
+            url = attachment.get("url", "")
             if not url:
                 continue
 
@@ -116,11 +116,11 @@ def parse_messages(messages_path):
                 continue
 
             # Only process images (.png) and videos (.mp4)
-            if not (url.endswith('.png') or url.endswith('.mp4')):
+            if not (url.endswith(".png") or url.endswith(".mp4")):
                 continue
 
             file_type = get_file_type(url)
-            is_video = file_type == 'mp4'
+            is_video = file_type == "mp4"
 
             # Determine title
             if associated_text:
@@ -132,40 +132,42 @@ def parse_messages(messages_path):
 
             # Truncate title if too long
             if len(title) > 100:
-                title = title[:97] + '...'
+                title = title[:97] + "..."
 
             # Description includes sender info
             description = f"{title}\n\nSent by {sender_name}" if associated_text else f"Sent by {sender_name}"
 
-            media_items.append({
-                'url': url,
-                'file_type': file_type,
-                'date': parse_iso_date(created_at),
-                'date_raw': created_at,
-                'message_id': message_id,
-                'attachment_idx': i,
-                'sender': sender_name,
-                'title': title,
-                'description': description,
-                'dialog_name': dialog_name,
-            })
+            media_items.append(
+                {
+                    "url": url,
+                    "file_type": file_type,
+                    "date": parse_iso_date(created_at),
+                    "date_raw": created_at,
+                    "message_id": message_id,
+                    "attachment_idx": i,
+                    "sender": sender_name,
+                    "title": title,
+                    "description": description,
+                    "dialog_name": dialog_name,
+                }
+            )
 
     # Sort by date (oldest first)
-    media_items.sort(key=lambda x: x['date_raw'])
+    media_items.sort(key=lambda x: x["date_raw"])
     return media_items
 
 
 def generate_filename(item, date_counts):
     """Generate a unique filename for a media item."""
-    date_str = item['date_raw']
-    file_type = item['file_type']
-    sender = item['sender'].replace(' ', '_').replace('.', '')
+    date_str = item["date_raw"]
+    file_type = item["file_type"]
+    sender = item["sender"].replace(" ", "_").replace(".", "")
 
     # Parse date: "2026-01-12T22:18:37Z" -> "2026-01-12_22-18-37"
     if date_str:
-        date_part = date_str.replace('T', '_').replace('Z', '').replace(':', '-')
+        date_part = date_str.replace("T", "_").replace("Z", "").replace(":", "-")
     else:
-        date_part = 'unknown_date'
+        date_part = "unknown_date"
 
     # Handle multiple files with same timestamp
     base_key = f"{sender}_{date_part}"
@@ -182,10 +184,10 @@ def download_one(args):
     """Download a single media item. Used by thread pool."""
     item, filepath = args
     try:
-        urllib.request.urlretrieve(item['url'], filepath)
-        return (filepath, item['date'], item['file_type'], item['title'], item['description'], None)
+        urllib.request.urlretrieve(item["url"], filepath)
+        return (filepath, item["date"], item["file_type"], item["title"], item["description"], None)
     except Exception as e:
-        return (filepath, item['date'], item['file_type'], item['title'], item['description'], str(e))
+        return (filepath, item["date"], item["file_type"], item["title"], item["description"], str(e))
 
 
 def download_media(media_items, output_dir, parallel=50):
@@ -214,8 +216,9 @@ def download_media(media_items, output_dir, parallel=50):
     # Download in parallel
     newly_downloaded = []
     with ThreadPoolExecutor(max_workers=parallel) as executor:
-        futures = {executor.submit(download_one, (item, filepath)): filename
-                   for item, filepath, filename in to_download}
+        futures = {
+            executor.submit(download_one, (item, filepath)): filename for item, filepath, filename in to_download
+        }
 
         for i, future in enumerate(as_completed(futures)):
             filename = futures[future]
@@ -223,9 +226,9 @@ def download_media(media_items, output_dir, parallel=50):
             filepath, date, ftype, title, desc, error = result
 
             if error:
-                print(f"[{i+1}/{len(to_download)}] ERROR {filename}: {error}")
+                print(f"[{i + 1}/{len(to_download)}] ERROR {filename}: {error}")
             else:
-                print(f"[{i+1}/{len(to_download)}] Downloaded: {filename}")
+                print(f"[{i + 1}/{len(to_download)}] Downloaded: {filename}")
                 newly_downloaded.append((filepath, date, ftype, title, desc))
 
     return newly_downloaded
@@ -236,34 +239,36 @@ def get_location_args(file_type):
     if not LOCATION or LOCATION is False:
         return []
 
-    lat = LOCATION.get('latitude')
-    lon = LOCATION.get('longitude')
+    lat = LOCATION.get("latitude")
+    lon = LOCATION.get("longitude")
 
     args = []
 
     # Add GPS coordinates if available
     if lat is not None and lon is not None:
-        if file_type == 'jpg':
-            lat_ref = 'N' if lat >= 0 else 'S'
-            lon_ref = 'E' if lon >= 0 else 'W'
-            args.extend([
-                f'-GPSLatitude={abs(lat)}',
-                f'-GPSLatitudeRef={lat_ref}',
-                f'-GPSLongitude={abs(lon)}',
-                f'-GPSLongitudeRef={lon_ref}',
-            ])
+        if file_type == "jpg":
+            lat_ref = "N" if lat >= 0 else "S"
+            lon_ref = "E" if lon >= 0 else "W"
+            args.extend(
+                [
+                    f"-GPSLatitude={abs(lat)}",
+                    f"-GPSLatitudeRef={lat_ref}",
+                    f"-GPSLongitude={abs(lon)}",
+                    f"-GPSLongitudeRef={lon_ref}",
+                ]
+            )
         else:  # mp4
-            args.append(f'-GPSCoordinates={lat} {lon}')
+            args.append(f"-GPSCoordinates={lat} {lon}")
 
     # Add location name/address if available
-    if LOCATION.get('name'):
-        args.append(f'-Location={LOCATION["name"]}')
-    if LOCATION.get('city'):
-        args.append(f'-City={LOCATION["city"]}')
-    if LOCATION.get('state'):
-        args.append(f'-State={LOCATION["state"]}')
-    if LOCATION.get('country'):
-        args.append(f'-Country={LOCATION["country"]}')
+    if LOCATION.get("name"):
+        args.append(f"-Location={LOCATION['name']}")
+    if LOCATION.get("city"):
+        args.append(f"-City={LOCATION['city']}")
+    if LOCATION.get("state"):
+        args.append(f"-State={LOCATION['state']}")
+    if LOCATION.get("country"):
+        args.append(f"-Country={LOCATION['country']}")
 
     return args
 
@@ -276,49 +281,57 @@ def set_metadata(downloaded_files, has_exiftool, exiftool_path=None):
         return
 
     print(f"\nSetting metadata on {len(downloaded_files)} files...")
-    exiftool_cmd = exiftool_path or 'exiftool'
+    exiftool_cmd = exiftool_path or "exiftool"
 
     for i, item in enumerate(downloaded_files):
         filepath, date_str, file_type, title, description = item
         filename = os.path.basename(filepath)
-        print(f"[{i+1}/{len(downloaded_files)}] Setting metadata on {filename}")
+        print(f"[{i + 1}/{len(downloaded_files)}] Setting metadata on {filename}")
 
-        args = [exiftool_cmd, '-overwrite_original', '-q']
+        args = [exiftool_cmd, "-overwrite_original", "-q"]
 
         # Add location args
         args.extend(get_location_args(file_type))
 
         # Add title and description (for Apple Photos)
         if title:
-            args.extend([
-                f'-Title={title}',
-                f'-XMP:Title={title}',
-                f'-IPTC:ObjectName={title}',
-            ])
+            args.extend(
+                [
+                    f"-Title={title}",
+                    f"-XMP:Title={title}",
+                    f"-IPTC:ObjectName={title}",
+                ]
+            )
         if description:
-            args.extend([
-                f'-Description={description}',
-                f'-Caption-Abstract={description}',
-                f'-ImageDescription={description}',
-            ])
+            args.extend(
+                [
+                    f"-Description={description}",
+                    f"-Caption-Abstract={description}",
+                    f"-ImageDescription={description}",
+                ]
+            )
 
         # Add date tags if we have a date
         if date_str:
-            if file_type == 'jpg':
-                args.extend([
-                    f'-DateTimeOriginal={date_str}',
-                    f'-CreateDate={date_str}',
-                    f'-ModifyDate={date_str}',
-                ])
-            elif file_type == 'mp4':
-                args.extend([
-                    f'-CreateDate={date_str}',
-                    f'-ModifyDate={date_str}',
-                    f'-MediaCreateDate={date_str}',
-                    f'-MediaModifyDate={date_str}',
-                    f'-TrackCreateDate={date_str}',
-                    f'-TrackModifyDate={date_str}',
-                ])
+            if file_type == "jpg":
+                args.extend(
+                    [
+                        f"-DateTimeOriginal={date_str}",
+                        f"-CreateDate={date_str}",
+                        f"-ModifyDate={date_str}",
+                    ]
+                )
+            elif file_type == "mp4":
+                args.extend(
+                    [
+                        f"-CreateDate={date_str}",
+                        f"-ModifyDate={date_str}",
+                        f"-MediaCreateDate={date_str}",
+                        f"-MediaModifyDate={date_str}",
+                        f"-TrackCreateDate={date_str}",
+                        f"-TrackModifyDate={date_str}",
+                    ]
+                )
 
         args.append(filepath)
         subprocess.run(args, capture_output=True)
@@ -327,10 +340,10 @@ def set_metadata(downloaded_files, has_exiftool, exiftool_path=None):
 def sanitize_folder_name(name):
     """Convert a name to a safe folder name."""
     # Replace spaces and special chars with underscores
-    safe = re.sub(r'[^\w\-]', '_', name)
+    safe = re.sub(r"[^\w\-]", "_", name)
     # Remove consecutive underscores
-    safe = re.sub(r'_+', '_', safe)
-    return safe.strip('_')
+    safe = re.sub(r"_+", "_", safe)
+    return safe.strip("_")
 
 
 def run(messages_path, output_dir, exiftool_path=None):
@@ -360,7 +373,7 @@ def run(messages_path, output_dir, exiftool_path=None):
     # Group by dialog (kid)
     by_dialog = defaultdict(list)
     for item in media_items:
-        dialog = item.get('dialog_name', 'Unknown')
+        dialog = item.get("dialog_name", "Unknown")
         by_dialog[dialog].append(item)
 
     # Download each dialog's media to its own subfolder
@@ -377,8 +390,8 @@ def run(messages_path, output_dir, exiftool_path=None):
     set_metadata(all_downloaded, has_exiftool, exiftool_path)
 
     # Summary
-    jpg_count = sum(1 for item in all_downloaded if item[2] == 'jpg')
-    mp4_count = sum(1 for item in all_downloaded if item[2] == 'mp4')
+    jpg_count = sum(1 for item in all_downloaded if item[2] == "jpg")
+    mp4_count = sum(1 for item in all_downloaded if item[2] == "mp4")
     print(f"\nDone! {len(all_downloaded)} files ({jpg_count} photos, {mp4_count} videos)")
 
     return [item[0] for item in all_downloaded]  # Return file paths
@@ -386,11 +399,11 @@ def run(messages_path, output_dir, exiftool_path=None):
 
 def main():
     script_dir = Path(__file__).parent
-    messages_path = sys.argv[1] if len(sys.argv) > 1 else str(script_dir / 'message.json')
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else str(script_dir / 'messages')
+    messages_path = sys.argv[1] if len(sys.argv) > 1 else str(script_dir / "message.json")
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else str(script_dir / "messages")
 
     run(messages_path, output_dir)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

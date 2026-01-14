@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Python tool to download photos and videos from Learning Genie (daycare/school app) with embedded EXIF metadata for importing into photo libraries. Supports automatic browser-based login or manual cURL token extraction.
+A Python tool to download photos and videos from LearningGenie (daycare/school app) with embedded EXIF metadata for importing into photo libraries. Supports automatic browser-based login or manual cURL token extraction.
 
 ## Commands
 
@@ -26,7 +26,7 @@ ruff check .                 # Lint
 ## Architecture
 
 **Two data sources requiring separate authentication:**
-- Home tab: Learning Genie API (`api2.learning-genie.com`) using `lg_session` cookie + `x-uid` header
+- Home tab: LearningGenie API (`api2.learning-genie.com`) using `lg_session` cookie + `x-uid` header
 - Chat tab: QuickBlox API (`apilearninggenie.quickblox.com`) using `QB-Token` header
 
 **Data flow:**
