@@ -4,20 +4,28 @@ Download photos and videos from Learning Genie with embedded metadata (dates, lo
 
 ## Quick Start
 
-### 1. Install dependencies (macOS)
+### Option A: Download the app (easiest)
+
+1. Download `Learning.Genie.Downloader.zip` from [Releases](../../releases/latest)
+2. Unzip and run the app
+3. On first run, Chromium browser will download automatically (~150MB)
+
+Photos are saved to `~/Documents/Learning Genie/`.
+
+### Option B: Run from source
+
+<details>
+<summary>Install dependencies and run with Python</summary>
 
 ```bash
 brew install exiftool
 pip3 install playwright && playwright install chromium
-```
-
-### 2. Run sync
-
-```bash
 ./sync.py
 ```
 
-That's it! The tool will:
+</details>
+
+The tool will:
 1. Open a browser and log in to Learning Genie
 2. Fetch your photos from the Home and Chat tabs
 3. Download everything with embedded metadata (dates, GPS, titles)
