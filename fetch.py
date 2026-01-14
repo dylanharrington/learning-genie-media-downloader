@@ -24,7 +24,13 @@ from pathlib import Path
 
 QUICKBLOX_API = 'https://apilearninggenie.quickblox.com'
 LG_API = 'https://api2.learning-genie.com'
-SCRIPT_DIR = Path(__file__).parent
+
+# In bundled app, use cwd (set by app_main.py to data dir)
+# Otherwise use script directory
+if getattr(sys, 'frozen', False):
+    SCRIPT_DIR = Path.cwd()
+else:
+    SCRIPT_DIR = Path(__file__).parent
 
 
 def parse_curl(curl_cmd):

@@ -4,9 +4,15 @@ Configuration management for Learning Genie downloader.
 """
 
 import json
+import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).parent
+# In bundled app, use cwd (set by app_main.py to data dir)
+# Otherwise use script directory
+if getattr(sys, 'frozen', False):
+    SCRIPT_DIR = Path.cwd()
+else:
+    SCRIPT_DIR = Path(__file__).parent
 CONFIG_FILE = SCRIPT_DIR / 'config.json'
 
 DEFAULT_CONFIG = {

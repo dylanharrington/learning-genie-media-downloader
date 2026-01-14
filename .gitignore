@@ -30,3 +30,4 @@ ENV/
 build/
 dist/
 *.spec
+app_main.py

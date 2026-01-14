@@ -100,6 +100,12 @@ def setup_environment():
     if exiftool_bin.exists():
         os.environ['PATH'] = str(exiftool_bin) + os.pathsep + os.environ.get('PATH', '')
 
+    # Point Playwright to standard system location (not PyInstaller temp dir)
+    if getattr(sys, 'frozen', False):
+        # Use the default Playwright cache location so pre-installed browsers work
+        browsers_dir = Path.home() / 'Library' / 'Caches' / 'ms-playwright'
+        os.environ['PLAYWRIGHT_BROWSERS_PATH'] = str(browsers_dir)
+
     # Set working directory to data dir for config/photos
     os.chdir(data_dir)
 
@@ -116,24 +122,57 @@ def ensure_chromium():
                 browser = p.chromium.launch(headless=True)
                 browser.close()
                 return True
-            except Exception:
-                pass
+            except Exception as e:
+                browser_error = str(e)
     except ImportError:
-        pass
+        browser_error = "playwright not available"
 
-    print("Installing Chromium browser (first run only)...")
+    # Browser not available - try to install
+    print("Chromium browser not found. Attempting to install...")
     print("This may take a few minutes...\\n")
 
-    try:
-        subprocess.run(
-            [sys.executable, '-m', 'playwright', 'install', 'chromium'],
-            check=True
-        )
-        return True
-    except subprocess.CalledProcessError:
-        print("\\nError: Could not install Chromium.")
-        print("Please run manually: playwright install chromium")
+    # In frozen mode, we need to use npx playwright or direct download
+    if getattr(sys, 'frozen', False):
+        # Try npx playwright (if Node.js is installed)
+        import shutil
+        npx_path = shutil.which('npx')
+        if npx_path:
+            try:
+                print("Trying: npx playwright install chromium")
+                subprocess.run(
+                    [npx_path, 'playwright', 'install', 'chromium'],
+                    check=True
+                )
+                return True
+            except subprocess.CalledProcessError:
+                pass
+
+        # Give user clear instructions
+        print("\\n" + "="*60)
+        print("CHROMIUM INSTALLATION REQUIRED")
+        print("="*60)
+        print("\\nThe auto-login feature requires Chromium browser.")
+        print("\\nPlease install it by running ONE of these commands:")
+        print("\\n  Option 1 (if you have Node.js):")
+        print("    npx playwright install chromium")
+        print("\\n  Option 2 (if you have Python):")
+        print("    pip3 install playwright && python3 -m playwright install chromium")
+        print("\\n  Option 3: Use manual mode (no browser needed):")
+        print("    Run this app with --manual flag")
+        print("\\n" + "="*60)
         return False
+    else:
+        # Not frozen - use sys.executable
+        try:
+            subprocess.run(
+                [sys.executable, '-m', 'playwright', 'install', 'chromium'],
+                check=True
+            )
+            return True
+        except subprocess.CalledProcessError:
+            print("\\nError: Could not install Chromium.")
+            print("Please run manually: python3 -m playwright install chromium")
+            return False
 
 
 def main():

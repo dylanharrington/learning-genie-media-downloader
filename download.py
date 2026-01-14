@@ -15,7 +15,12 @@ import shutil
 import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).parent
+# In bundled app, use cwd (set by app_main.py to data dir)
+# Otherwise use script directory
+if getattr(sys, 'frozen', False):
+    SCRIPT_DIR = Path.cwd()
+else:
+    SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 sys.path.insert(0, str(SCRIPT_DIR / 'scripts'))
 
