@@ -19,15 +19,39 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
-from config import get_email, get_op_path, set_email, set_op_path
+from config import get_bw_item, get_email, get_op_path, set_bw_item, set_email, set_op_path
 
 LG_WEB_URL = "https://web.learning-genie.com"
 
 
-def get_password_from_1password(op_path):
-    """Try to get password from 1Password CLI."""
+def get_password_from_bitwarden(bw_item):
+    """Try to get password from Bitwarden CLI. Requires BW_SESSION env var."""
     try:
-        result = subprocess.run(["op", "read", op_path], capture_output=True, text=True, timeout=30)
+        result = subprocess.run(
+            ["bw", "get", "item", bw_item, "--format", "json"],
+            capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode == 0:
+            import json
+            item = json.loads(result.stdout)
+            password = item.get("login", {}).get("password")
+            if password:
+                return password
+    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError):
+        pass
+    return None
+
+
+def get_password_from_1password(op_path):
+    """Try to get password from 1Password CLI (fallback).
+    Uses op_read_auto.sh wrapper to handle authorization dialogs on Mac Mini."""
+    try:
+        # Use the op_read_auto.sh wrapper if available (auto-approves auth dialogs)
+        wrapper = Path(__file__).parent / "op_read_auto.sh"
+        if wrapper.exists():
+            result = subprocess.run([str(wrapper), op_path], capture_output=True, text=True, timeout=30)
+        else:
+            result = subprocess.run(["op", "read", op_path], capture_output=True, text=True, timeout=30)
         if result.returncode == 0:
             return result.stdout.strip()
     except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -49,15 +73,23 @@ def get_credentials():
         print("Error: Email is required")
         sys.exit(1)
 
-    # Password: 1Password → env var → prompt
+    # Password: Bitwarden → 1Password (fallback) → env var → prompt
     password = None
 
-    # Try 1Password
-    op_path = get_op_path()
-    if op_path:
-        password = get_password_from_1password(op_path)
+    # Try Bitwarden
+    bw_item = get_bw_item()
+    if bw_item:
+        password = get_password_from_bitwarden(bw_item)
         if password:
-            print("✓ Got password from 1Password")
+            print("✓ Got password from Bitwarden")
+
+    # Try 1Password (fallback)
+    if not password:
+        op_path = get_op_path()
+        if op_path:
+            password = get_password_from_1password(op_path)
+            if password:
+                print("✓ Got password from 1Password")
 
     # Try environment variable
     if not password:
@@ -69,15 +101,15 @@ def get_credentials():
     if not password:
         password = getpass.getpass("LearningGenie password: ")
 
-        # Offer to set up 1Password for next time
-        if not op_path:
+        # Offer to set up Bitwarden for next time
+        if not bw_item:
             print("\nTip: To avoid entering password each time, you can:")
-            print("  1. Set LG_PASSWORD environment variable, or")
-            print("  2. Use 1Password CLI (op)")
-            setup = input("\nSet up 1Password path? (e.g., op://Private/LearningGenie/password) [skip]: ").strip()
+            print("  1. Use Bitwarden CLI (bw) - set BW_SESSION env var first")
+            print("  2. Set LG_PASSWORD environment variable")
+            setup = input("\nSet up Bitwarden item name? (e.g., Learning Genie) [skip]: ").strip()
             if setup:
-                set_op_path(setup)
-                print("✓ 1Password path saved to config.json")
+                set_bw_item(setup)
+                print("✓ Bitwarden item saved to config.json")
 
     if not password:
         print("Error: Password is required")

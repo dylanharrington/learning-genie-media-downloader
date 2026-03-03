@@ -18,7 +18,8 @@ CONFIG_FILE = SCRIPT_DIR / "config.json"
 DEFAULT_CONFIG = {
     "location": None,  # Will be set on first run
     "email": None,  # LearningGenie login email
-    "op_path": None,  # 1Password path for password (e.g., "op://Private/LearningGenie/password")
+    "bw_item": None,  # Bitwarden item name (e.g., "Learning Genie")
+    "op_path": None,  # 1Password path for password (fallback)
 }
 
 
@@ -61,14 +62,28 @@ def set_email(email):
     return email
 
 
+def get_bw_item():
+    """Get Bitwarden item name for password, or None if not set."""
+    config = load_config()
+    return config.get("bw_item")
+
+
+def set_bw_item(bw_item):
+    """Set the Bitwarden item name for password retrieval."""
+    config = load_config()
+    config["bw_item"] = bw_item
+    save_config(config)
+    return bw_item
+
+
 def get_op_path():
-    """Get 1Password path for password, or None if not set."""
+    """Get 1Password path for password (fallback), or None if not set."""
     config = load_config()
     return config.get("op_path")
 
 
 def set_op_path(op_path):
-    """Set the 1Password path for password retrieval."""
+    """Set the 1Password path for password retrieval (fallback)."""
     config = load_config()
     config["op_path"] = op_path
     save_config(config)

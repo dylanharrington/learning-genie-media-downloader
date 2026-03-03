@@ -39,6 +39,6 @@ ruff check .                 # Lint
 - Photos stored flat (`photos/home/`, `photos/chat/Kid_Name/`)
 - Downloads skip existing files (deduplication by filename)
 - New files copied to `photos/new/` (cleared each run, mirrors folder structure) for easy import
-- Config stored in `config.json`: location, email, 1Password path
-- Password resolution: 1Password CLI (`op read`) → `LG_PASSWORD` env var → interactive prompt
+- Config stored in `config.json`: location, email, Bitwarden item name, 1Password path (fallback)
+- Password resolution: Bitwarden CLI (`bw get item`) → 1Password CLI (`op read`, fallback) → `LG_PASSWORD` env var → interactive prompt
 - Both download scripts share similar structure: parse JSON, generate unique filenames with date counts, parallel download with ThreadPoolExecutor (50 workers), set EXIF metadata

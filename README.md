@@ -104,9 +104,10 @@ To change later, delete `config.json` and run `./sync.py` again, or edit `config
 
 Your email is saved to `config.json` after the first run. For the password, the tool checks (in order):
 
-1. **1Password CLI**: Set up with `op://vault/LearningGenie/password` path
-2. **Environment variable**: `export LG_PASSWORD=yourpassword`
-3. **Prompt**: Asked each time if neither above is configured
+1. **Bitwarden CLI**: Set `BW_SESSION` env var, configure item name (e.g., `Learning Genie`)
+2. **1Password CLI** (fallback): Set up with `op://vault/LearningGenie/password` path
+3. **Environment variable**: `export LG_PASSWORD=yourpassword`
+4. **Prompt**: Asked each time if none of the above are configured
 
 ---
 

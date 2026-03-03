@@ -4,6 +4,9 @@ photos/
 .last_sync
 config.json
 
+# Local helpers
+op_read_auto.sh
+
 # macOS
 .DS_Store
 
