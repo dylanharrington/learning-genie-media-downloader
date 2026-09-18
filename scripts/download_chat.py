@@ -20,6 +20,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from config import get_location
+from time_utils import utc_to_local_exif
+from tls_utils import download_to_file
 
 LOCATION = get_location()
 
@@ -52,11 +54,8 @@ def get_file_type(url: str) -> str:
 
 
 def parse_iso_date(iso_str: str) -> str:
-    """Convert ISO date to exiftool format: '2026-01-12T22:18:37Z' -> '2026:01:12 22:18:37'"""
-    if not iso_str:
-        return ""
-    # Remove 'T' and 'Z', replace date dashes with colons
-    return iso_str.replace("T", " ").replace("Z", "").replace("-", ":", 2)
+    """Convert a UTC ISO timestamp to local EXIF time in America/Los_Angeles."""
+    return utc_to_local_exif(iso_str)
 
 
 def find_associated_text(items, current_idx, sender_id, date_sent):
@@ -184,7 +183,7 @@ def download_one(args):
     """Download a single media item. Used by thread pool."""
     item, filepath = args
     try:
-        urllib.request.urlretrieve(item["url"], filepath)
+        download_to_file(item["url"], filepath)
         return (filepath, item["date"], item["file_type"], item["title"], item["description"], None)
     except Exception as e:
         return (filepath, item["date"], item["file_type"], item["title"], item["description"], str(e))
@@ -215,6 +214,7 @@ def download_media(media_items, output_dir, parallel=50):
 
     # Download in parallel
     newly_downloaded = []
+    failures = []
     with ThreadPoolExecutor(max_workers=parallel) as executor:
         futures = {
             executor.submit(download_one, (item, filepath)): filename for item, filepath, filename in to_download
@@ -227,9 +227,13 @@ def download_media(media_items, output_dir, parallel=50):
 
             if error:
                 print(f"[{i + 1}/{len(to_download)}] ERROR {filename}: {error}")
+                failures.append((filename, error))
             else:
                 print(f"[{i + 1}/{len(to_download)}] Downloaded: {filename}")
                 newly_downloaded.append((filepath, date, ftype, title, desc))
+
+    if failures:
+        raise RuntimeError(f"Failed to download {len(failures)} of {len(to_download)} Chat media files")
 
     return newly_downloaded
 

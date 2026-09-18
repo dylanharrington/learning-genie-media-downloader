@@ -119,6 +119,24 @@ echo "  lucy-school-photos.json (manifest)"
 echo "  Enriching manifest with activity captions..."
 python3 - "$LATEST_DATE" "$MANIFEST" "$SCRIPT_DIR/data/notes.json" "$SCRIPT_DIR/data/message.json" << 'PYEOF'
 import json, sys
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+LA = ZoneInfo('America/Los_Angeles')
+
+def local_date_and_time(value):
+    if not value:
+        return '', ''
+    normalized = value.replace(' ', 'T', 1) if ' ' in value and 'T' not in value else value
+    if normalized.endswith('Z'):
+        normalized = normalized[:-1] + '+00:00'
+    elif '+' not in normalized[10:] and '-' not in normalized[10:]:
+        normalized = normalized + '+00:00'
+    dt = datetime.fromisoformat(normalized)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    local_dt = dt.astimezone(LA)
+    return local_dt.strftime('%Y-%m-%d'), local_dt.strftime('%H:%M')
 
 date = sys.argv[1]
 manifest_path = sys.argv[2]
@@ -156,15 +174,15 @@ for note in notes:
                 'time': note.get('create_at', '')[11:16],
             })
 
-# Find teacher text messages for this date
+# Find teacher text messages for this date, converting UTC chat timestamps to local time
 teacher_msgs = []
 for msg in messages:
-    created = msg.get('created_at', '')[:10]
+    created, local_time = local_date_and_time(msg.get('created_at', ''))
     if created == date and msg.get('message') and msg['message'] != '[image]':
         teacher_msgs.append({
             'message': msg['message'],
             'from': msg.get('user_name', 'Teacher'),
-            'time': msg.get('created_at', '')[11:16],
+            'time': local_time,
         })
 
 manifest['activities'] = activities

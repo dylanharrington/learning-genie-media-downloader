@@ -19,6 +19,8 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(SCRIPT_DIR))
 from config import get_location
+from time_utils import utc_to_local_exif
+from tls_utils import download_to_file
 
 LOCATION = get_location()
 
@@ -96,7 +98,7 @@ def download_one(args):
     """Download a single media item. Used by thread pool."""
     item, filepath = args
     try:
-        urllib.request.urlretrieve(item["url"], filepath)
+        download_to_file(item["url"], filepath)
         return (filepath, item["date"], item["fileType"], item.get("title", ""), item.get("description", ""), None)
     except Exception as e:
         return (filepath, item["date"], item["fileType"], item.get("title", ""), item.get("description", ""), str(e))
@@ -127,6 +129,7 @@ def download_media(media_items, output_dir, parallel=50):
 
     # Download in parallel
     newly_downloaded = []
+    failures = []
     with ThreadPoolExecutor(max_workers=parallel) as executor:
         futures = {
             executor.submit(download_one, (item, filepath)): filename for item, filepath, filename in to_download
@@ -139,9 +142,13 @@ def download_media(media_items, output_dir, parallel=50):
 
             if error:
                 print(f"[{i + 1}/{len(to_download)}] ERROR {filename}: {error}")
+                failures.append((filename, error))
             else:
                 print(f"[{i + 1}/{len(to_download)}] Downloaded: {filename}")
                 newly_downloaded.append((filepath, date, ftype, title, desc))
+
+    if failures:
+        raise RuntimeError(f"Failed to download {len(failures)} of {len(to_download)} Home media files")
 
     return newly_downloaded
 
@@ -225,8 +232,7 @@ def set_metadata(downloaded_files, has_exiftool, exiftool_path=None):
 
         # Add date tags if we have a date
         if date_str:
-            # Format for exiftool: "YYYY:MM:DD HH:MM:SS"
-            exif_date = date_str.replace("-", ":")
+            exif_date = utc_to_local_exif(date_str)
 
             if file_type == "jpg":
                 args.extend(

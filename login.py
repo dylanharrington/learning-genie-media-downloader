@@ -28,7 +28,7 @@ def get_password_from_bitwarden(bw_item):
     """Try to get password from Bitwarden CLI. Requires BW_SESSION env var."""
     try:
         result = subprocess.run(
-            ["bw", "get", "item", bw_item, "--format", "json"],
+            ["bw", "get", "item", bw_item],
             capture_output=True, text=True, timeout=30,
         )
         if result.returncode == 0:
@@ -161,9 +161,25 @@ def login_and_capture_tokens(email, password, headless=True):
 
         page = context.new_page()
 
-        # Navigate to LearningGenie
+        # Navigate to LearningGenie. The site can keep background resources open long
+        # enough for Playwright's default "load" wait to time out even though the
+        # login form is usable, so wait only for DOM readiness and retry transient
+        # navigation failures before giving up.
         print(f"Navigating to {LG_WEB_URL}...")
-        page.goto(LG_WEB_URL)
+        last_error = None
+        for attempt in range(1, 4):
+            try:
+                page.goto(LG_WEB_URL, wait_until="domcontentloaded", timeout=45000)
+                last_error = None
+                break
+            except Exception as exc:
+                last_error = exc
+                if attempt == 3:
+                    raise
+                print(f"  Navigation attempt {attempt} failed; retrying...")
+                page.wait_for_timeout(2000 * attempt)
+        if last_error:
+            raise last_error
 
         # Wait for and fill login form
         print("Waiting for login form...")

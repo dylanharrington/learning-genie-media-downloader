@@ -1,6 +1,7 @@
 """Unit tests for utility functions."""
 
 import json
+import ssl
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -51,14 +52,58 @@ class TestParseCurl:
         assert headers == {}
 
 
+class TestTLSCompatibility:
+    def test_normalizes_legacy_s3_double_slash_path(self):
+        from tls_utils import normalized_request_url
+
+        assert normalized_request_url(
+            "https://s3.amazonaws.com//com.learning-genie.prod.us/photo.jpg"
+        ) == "https://s3.amazonaws.com/com.learning-genie.prod.us/photo.jpg"
+
+    def test_does_not_rewrite_other_hosts_or_paths(self):
+        from tls_utils import normalized_request_url
+
+        assert normalized_request_url("https://example.com//photo.jpg") == "https://example.com//photo.jpg"
+        assert normalized_request_url("https://s3.amazonaws.com/bucket/photo.jpg") == (
+            "https://s3.amazonaws.com/bucket/photo.jpg"
+        )
+
+    def test_quickblox_relaxes_only_strict_x509_checks(self):
+        from tls_utils import verified_context_for_url
+
+        context = verified_context_for_url("https://apilearninggenie.quickblox.com/chat/Dialog.json")
+        assert context.check_hostname is True
+        assert context.verify_mode == ssl.CERT_REQUIRED
+        if hasattr(ssl, "VERIFY_X509_STRICT"):
+            assert not context.verify_flags & ssl.VERIFY_X509_STRICT
+
+    def test_learning_genie_api_also_relaxes_only_strict_x509_checks(self):
+        from tls_utils import verified_context_for_url
+
+        context = verified_context_for_url("https://api2.learning-genie.com/api/v1/Enrollments")
+        assert context.check_hostname is True
+        assert context.verify_mode == ssl.CERT_REQUIRED
+        if hasattr(ssl, "VERIFY_X509_STRICT"):
+            assert not context.verify_flags & ssl.VERIFY_X509_STRICT
+
+    def test_unrelated_hosts_keep_default_strict_checks(self):
+        from tls_utils import verified_context_for_url
+
+        context = verified_context_for_url("https://example.com/")
+        assert context.check_hostname is True
+        assert context.verify_mode == ssl.CERT_REQUIRED
+        if hasattr(ssl, "VERIFY_X509_STRICT"):
+            assert context.verify_flags & ssl.VERIFY_X509_STRICT
+
+
 class TestDownloadChatUtils:
     """Tests for scripts/download_chat.py utility functions"""
 
     def test_parse_iso_date(self):
         from download_chat import parse_iso_date
 
-        assert parse_iso_date("2026-01-12T22:18:37Z") == "2026:01:12 22:18:37"
-        assert parse_iso_date("2025-06-15T09:30:00Z") == "2025:06:15 09:30:00"
+        assert parse_iso_date("2026-01-12T22:18:37Z") == "2026:01:12 14:18:37"
+        assert parse_iso_date("2025-06-15T09:30:00Z") == "2025:06:15 02:30:00"
         assert parse_iso_date("") == ""
         assert parse_iso_date(None) == ""
 
@@ -123,6 +168,15 @@ class TestDownloadChatUtils:
         # Third file
         f3 = generate_filename(item, date_counts)
         assert f3 == "Teacher_2026-01-12_22-18-37_03.jpg"
+
+
+class TestTimeUtils:
+    def test_utc_to_local_date_and_time(self):
+        from time_utils import utc_to_local_date, utc_to_local_time, filename_utc_to_local_exif
+
+        assert utc_to_local_date("2026-03-17T23:47:47Z") == "2026-03-17"
+        assert utc_to_local_time("2026-03-17T23:47:47Z") == "16:47"
+        assert filename_utc_to_local_exif("2026-03-17_23-47-47") == "2026:03:17 16:47:47"
 
 
 class TestDownloadHomeUtils:

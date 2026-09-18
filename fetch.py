@@ -22,6 +22,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+from tls_utils import verified_context_for_url
+
 QUICKBLOX_API = "https://apilearninggenie.quickblox.com"
 LG_API = "https://api2.learning-genie.com"
 
@@ -58,7 +60,7 @@ def fetch_json(url, headers):
     """Fetch JSON from URL with headers."""
     req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.urlopen(req, context=verified_context_for_url(url)) as response:
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as e:
         print(f"HTTP Error {e.code}: {e.reason}")
